@@ -55,6 +55,7 @@ object CampusGrid {
         return data[row][col]
     }
 
+
     fun latLonToCell(lat: Double, lon: Double): Pair<Int, Int>? {
         val xMerc = Math.toRadians(lon) * 6378137.0
         val yMerc = Math.log(Math.tan(Math.PI / 4.0 + Math.toRadians(lat) / 2.0)) * 6378137.0
