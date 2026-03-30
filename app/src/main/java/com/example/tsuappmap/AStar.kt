@@ -1,15 +1,14 @@
 package com.example.tsuappmap
 
-import androidx.compose.ui.graphics.Path
 import java.util.PriorityQueue
 import kotlin.math.sqrt
 
 object AStar {
 
     data class SearchStep(
-        val visited: Set<Pair<Int, Int>>,
-        val frontier: Set<Pair<Int, Int>>,
         val current: Pair<Int, Int>,
+        val visited: Set<Pair<Int, Int>>? = null,
+        val frontier: Set<Pair<Int, Int>>? = null,
         val path: List<Pair<Int, Int>>? = null
     )
 
@@ -36,6 +35,9 @@ object AStar {
         openSet.add(Node(startRow, startCol, 0.0, heuristic(startRow, startCol, endRow, endCol)))
         frontier.add(Pair(startRow, startCol))
 
+        val animationStep = 20
+        var stepCounter = 0
+
         while (openSet.isNotEmpty()) {
             val current = openSet.poll()!!
             val currentCell = Pair(current.row, current.col)
@@ -45,15 +47,27 @@ object AStar {
             frontier.remove(currentCell)
             visited.add(currentCell)
 
-            steps.add(SearchStep(
-                visited = visited.toSet(),
-                frontier = frontier.toSet(),
-                current = currentCell
-            ))
+            stepCounter++
+            if (stepCounter % animationStep == 0) {
+                steps.add(
+                    SearchStep(
+                        current = currentCell,
+                        visited = visited.toSet(),
+                        frontier = frontier.toSet()
+                    )
+                )
+            }
 
             if (current.row == endRow && current.col == endCol) {
                 val path = reconstructPath(cameFrom, endRow, endCol)
-                steps[steps.lastIndex] = steps.last().copy(path = path)
+                steps.add(
+                    SearchStep(
+                        current = currentCell,
+                        visited = visited.toSet(),
+                        frontier = frontier.toSet(),
+                        path = path
+                    )
+                )
                 return steps
             }
 
@@ -71,8 +85,8 @@ object AStar {
         }
     }
 
-        steps.add(SearchStep(visited.toSet(), frontier.toSet(),
-        Pair(startRow, startCol), path = null))
+        steps.add(SearchStep(Pair(startRow, startCol), visited.toSet(), frontier.toSet(),
+            null))
         return steps
 }
 
@@ -92,8 +106,8 @@ object AStar {
                 val nCol = col + dc
                 if (!CustomObstracle.isWalkable(nRow, nCol)) continue
                 if (dr != 0 && dc != 0) {
-                    if (!CustomObstracle.isWalkable(row + dr, col) || !CustomObstracle.isWalkable(
-                            row, col + dc)) continue
+                    if (!CustomObstracle.isWalkable(nRow, col) || !CustomObstracle.isWalkable(
+                            row, nCol)) continue
                 }
                 result.add(Pair(nRow, nCol))
             }

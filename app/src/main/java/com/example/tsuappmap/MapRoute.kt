@@ -10,9 +10,11 @@ import org.maplibre.android.maps.MapLibreMap
 
 object MapRoute {
     private var routeLine: Polyline? = null
-    private var visitedPolygons: List<Polygon> = emptyList()
-    private var frontierPolygons: List<Polygon> = emptyList()
     private var obstacklePolygons: List<Polygon> = emptyList()
+    private var drawnVisited = mutableSetOf<Pair<Int, Int>>()
+    private var drawnFrontiers = mutableMapOf<Pair<Int, Int>, Polygon>()
+    private var visitedPolygons = mutableListOf<Polygon>()
+
 
     fun drawRoute (map: MapLibreMap, path: List<Pair<Int, Int>>) {
         clearRoute(map)
@@ -29,11 +31,19 @@ object MapRoute {
                        visited: Set<Pair<Int, Int>>,
                        frontier: Set<Pair<Int, Int>>,
                        current: Pair<Int, Int>) {
-        visitedPolygons.forEach { map.removePolygon(it) }
-        frontierPolygons.forEach { map.removePolygon(it) }
+        val newVisited = visited - drawnVisited
 
-        visitedPolygons = visited.map { drawCell (map, it, Color.argb(80, 150, 150, 150))}
-        frontierPolygons = frontier.map { drawCell (map, it, Color.argb(180, 255, 200, 0))}
+        for (cell in newVisited) {
+            drawnFrontiers.remove(cell)?.let { map.removePolygon(it) }
+            visitedPolygons.add ( drawCell (map, cell, Color.argb(80, 150, 150, 150)))
+            drawnVisited.add(cell)
+        }
+
+        val newFrontier = frontier - drawnFrontiers.keys - drawnVisited
+        for (cell in newFrontier) {
+            drawnFrontiers[cell] = drawCell (map, cell, Color.argb(180, 255, 200, 0))
+        }
+
         drawCell(map, current, Color.argb(220, 255, 120, 0))
     }
 
@@ -51,12 +61,11 @@ object MapRoute {
 
     fun clearSearch(map: MapLibreMap) {
         visitedPolygons.forEach { map.removePolygon(it) }
-        frontierPolygons.forEach { map.removePolygon(it) }
-        visitedPolygons = emptyList()
-        frontierPolygons = emptyList()
+        drawnFrontiers.values.forEach { map.removePolygon(it) }
+        visitedPolygons.clear()
+        drawnVisited.clear()
     }
 
-    //6 22 2
     private fun drawCell (
         map: MapLibreMap,
         cell: Pair<Int, Int>,
