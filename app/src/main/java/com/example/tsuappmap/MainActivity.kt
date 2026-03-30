@@ -24,6 +24,7 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
+import kotlinx.coroutines.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,6 +83,68 @@ fun TsuMapScreen() {
 
 
                         drawFinalGrid(map, latMin, latMax, lngMin, lngMax, centerTsu.latitude)
+
+                        var isObstrackleMode = false
+                        var startPoint: Pair<Int, Int>? = null
+                        var animationJob: Job? = null
+
+                        map.addOnMapClickListener { latLng ->
+                            val cell = CampusGrid.latLonToCell(latLng.latitude, latLng.longitude)
+                                ?: return@addOnMapClickListener true
+
+                            if (isObstrackleMode) {
+                                CustomObstracle.toggle(cell.first, cell.second)
+                                MapRoute.drawObstracles(map)
+                            }
+                            else {
+                                if (!CustomObstracle.isWalkable(cell.first, cell.second)) {
+                                    android.widget.Toast.makeText(
+                                        context, "Это препятствие!", android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@addOnMapClickListener true
+                                }
+
+                                if (startPoint == null) {
+                                    startPoint = cell
+                                    android.widget.Toast.makeText(
+                                        context, "Старт выбран, выбери конечную точку", android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                else {
+                                    val (sRow, sCol) = startPoint!!
+                                    val (eRow, eCol) = cell
+                                    startPoint = null
+
+                                    animationJob?.cancel()
+                                    MapRoute.clearSearch(map)
+                                    MapRoute.clearRoute(map)
+
+                                    animationJob = CoroutineScope(Dispatchers.Main).launch {
+                                        val steps = withContext(Dispatchers.Default) {
+                                            AStar.findPathWithSteps(sRow, sCol, eRow, eCol)
+                                        }
+
+                                        for (step in steps) {
+                                            MapRoute.drawSearchStep(map, step.visited, step.frontier, step.current)
+                                            delay(16L)
+                                        }
+
+                                        val lastStep = steps.last()
+                                        if (lastStep.path != null) {
+                                            MapRoute.clearSearch(map)
+                                            MapRoute.drawRoute(map, lastStep.path)
+                                        }
+                                         else {
+                                            MapRoute.clearSearch(map)
+                                            android.widget.Toast.makeText(
+                                                context, "Маршрут не найден", android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+                                }
+                            }
+                            true
+                        }
                     }
                 }
             }

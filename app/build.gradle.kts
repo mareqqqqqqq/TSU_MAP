@@ -57,5 +57,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     implementation("org.maplibre.gl:android-sdk:11.0.0")
-
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
