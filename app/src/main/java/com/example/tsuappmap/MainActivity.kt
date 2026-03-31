@@ -368,13 +368,17 @@ fun TsuMapScreen() {
                                             }
 
                                             for (step in steps) {
-                                                MapRoute.drawSearchStep(
-                                                    map,
-                                                    step.visited,
-                                                    step.frontier,
-                                                    step.current
-                                                )
-                                                delay(16L)
+                                                if (step.visited != null && step.frontier != null)
+                                                {
+                                                    MapRoute.drawSearchStep(
+                                                        map,
+                                                        step.visited,
+                                                        step.frontier,
+                                                        step.current
+                                                    )
+                                                }
+
+                                                delay(50L)
                                             }
 
                                             val lastStep = steps.last()
