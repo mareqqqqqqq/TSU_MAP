@@ -1,4 +1,6 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Astar
+
+import com.example.tsuappmap.map.CampusGrid
 
 object CustomObstracle {
 

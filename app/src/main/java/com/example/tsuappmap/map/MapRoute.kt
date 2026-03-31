@@ -1,6 +1,8 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.map
 
 import android.graphics.Color
+import com.example.tsuappmap.map.CampusGrid
+import com.example.tsuappmap.algorithm.Astar.CustomObstracle
 import org.maplibre.android.annotations.Polygon
 import org.maplibre.android.annotations.PolygonOptions
 import org.maplibre.android.annotations.Polyline
@@ -22,7 +24,8 @@ object MapRoute {
             val (lat, lon) = CampusGrid.cellToLatLon(row, col)
             LatLng(lat, lon)
         }
-        routeLine = map.addPolyline(PolylineOptions().addAll(points).color(
+        routeLine = map.addPolyline(
+            PolylineOptions().addAll(points).color(
             Color.rgb(0, 120, 255)).width(4f)
         )
     }
