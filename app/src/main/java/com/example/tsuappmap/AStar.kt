@@ -35,7 +35,8 @@ object AStar {
         openSet.add(Node(startRow, startCol, 0.0, heuristic(startRow, startCol, endRow, endCol)))
         frontier.add(Pair(startRow, startCol))
 
-        val animationStep = 20
+        val animationStep = 50
+        val maxSteps = 400
         var stepCounter = 0
 
         while (openSet.isNotEmpty()) {
@@ -48,7 +49,7 @@ object AStar {
             visited.add(currentCell)
 
             stepCounter++
-            if (stepCounter % animationStep == 0) {
+            if (stepCounter % animationStep == 0 && steps.size < maxSteps) {
                 steps.add(
                     SearchStep(
                         current = currentCell,

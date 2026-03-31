@@ -1,6 +1,7 @@
 package com.example.tsuappmap
 
 import android.content.Context
+import androidx.compose.ui.graphics.vector.Path
 
 object CampusGrid {
     var rows: Int = 0
@@ -69,5 +70,16 @@ object CampusGrid {
         val lon = Math.toDegrees(xMerc / 6378137.0)
         val lat = Math.toDegrees(2.0 * Math.atan(Math.exp(yMerc / 6378137.0)) - Math.PI / 2.0)
         return Pair(lat, lon)
+    }
+
+    fun nearestWalkable(row: Int, col: Int): Pair<Int, Int>? {
+        if (isWalkable(row, col)) return Pair(row, col)
+        for (dr in -1..1) {
+            for (dc in -1..1) {
+                if (dr == 0 && dc == 0) continue
+                if (isWalkable(row + dr, col + dc)) return Pair(row + dr, col + dc)
+            }
+        }
+        return null
     }
 }

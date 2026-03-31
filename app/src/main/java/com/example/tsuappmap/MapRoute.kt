@@ -7,6 +7,8 @@ import org.maplibre.android.annotations.Polyline
 import org.maplibre.android.annotations.PolylineOptions
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.annotations.Marker
+import org.maplibre.android.annotations.MarkerOptions
 
 object MapRoute {
     private var routeLine: Polyline? = null
@@ -14,6 +16,8 @@ object MapRoute {
     private var drawnVisited = mutableSetOf<Pair<Int, Int>>()
     private var drawnFrontiers = mutableMapOf<Pair<Int, Int>, Polygon>()
     private var visitedPolygons = mutableListOf<Polygon>()
+    private var startMarker: Marker? = null
+    private var endMarker: Marker? = null
 
 
     fun drawRoute (map: MapLibreMap, path: List<Pair<Int, Int>>) {
@@ -43,11 +47,9 @@ object MapRoute {
         for (cell in newFrontier) {
             drawnFrontiers[cell] = drawCell (map, cell, Color.argb(180, 255, 200, 0))
         }
-
-        drawCell(map, current, Color.argb(220, 255, 120, 0))
     }
 
-    fun drawObstracles(map: MapLibreMap) {
+    fun drawObstacles(map: MapLibreMap) {
         obstacklePolygons.forEach { map.removePolygon(it) }
         obstacklePolygons = CustomObstracle.getAll().map {
             drawCell(map, it, Color.argb(180, 220, 50, 50))
@@ -64,6 +66,29 @@ object MapRoute {
         drawnFrontiers.values.forEach { map.removePolygon(it) }
         visitedPolygons.clear()
         drawnVisited.clear()
+    }
+
+    fun setStartMarker(map: MapLibreMap, cell: Pair<Int, Int>) {
+        startMarker?.let { map.removeMarker(it) }
+        val (lat, lon) = CampusGrid.cellToLatLon(cell.first, cell.second)
+        startMarker = map.addMarker(
+            MarkerOptions().position(LatLng(lat, lon)).title("Старт")
+        )
+    }
+
+    fun setEndMarker(map: MapLibreMap, cell: Pair<Int, Int>) {
+        endMarker?.let { map.removeMarker(it) }
+        val (lat, lon) = CampusGrid.cellToLatLon(cell.first, cell.second)
+        endMarker = map.addMarker(
+            MarkerOptions().position(LatLng(lat, lon)).title("Конец")
+        )
+    }
+
+    fun clearMarkers(map: MapLibreMap) {
+        startMarker?.let { map.removeMarker(it) }
+        endMarker?.let { map.removeMarker(it) }
+        startMarker = null
+        endMarker = null
     }
 
     private fun drawCell (

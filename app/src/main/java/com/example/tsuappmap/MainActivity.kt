@@ -335,7 +335,7 @@ fun TsuMapScreen() {
 
                                 if (isObstrackleMode) {
                                     CustomObstracle.toggle(cell.first, cell.second)
-                                    MapRoute.drawObstracles(map)
+                                    MapRoute.drawObstacles(map)
                                 } else {
                                     if (!CustomObstracle.isWalkable(cell.first, cell.second)) {
                                         android.widget.Toast.makeText(
