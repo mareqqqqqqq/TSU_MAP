@@ -34,10 +34,10 @@ fun CampusMapView(
                         val centerTsu = LatLng(56.4695, 84.9475)
 
                         val baseRadius = 700.0
-                        val southExtra = 300.0
-                        val northExtra = 0.0
-                        val westExtra = 150.0
-                        val eastExtra = -450.0
+                        val southExtra = 500.0
+                        val northExtra = 100.0
+                        val westExtra = 306.0
+                        val eastExtra = -297.33
 
                         val cosLat = Math.cos(Math.toRadians(centerTsu.latitude))
 
@@ -52,7 +52,7 @@ fun CampusMapView(
                             .build()
 
                         map.setLatLngBoundsForCameraTarget(tsuBounds)
-                        map.setMinZoomPreference(14.5)
+                        map.setMinZoomPreference(13.5)
                         map.uiSettings.isCompassEnabled = false
                         map.uiSettings.isLogoEnabled = false
                         map.uiSettings.isAttributionEnabled = false

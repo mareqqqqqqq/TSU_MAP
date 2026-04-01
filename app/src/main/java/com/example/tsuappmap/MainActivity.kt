@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
 fun TsuMapScreen() {
     val context = LocalContext.current
 
-    var selectedTab by remember {mutableStateOf(0)}
+    var selectedTab by remember {mutableStateOf(1)}
 
 
 
@@ -77,9 +77,10 @@ fun TsuMapScreen() {
                         .padding(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
                 ) {
-                    TabButton("Кнопка 1") { selectedTab = 1 }
-                    TabButton("Кнопка 2") { selectedTab = 2 }
-                    TabButton("Кнопка 3") { selectedTab = 3 }
+                    TabButton("Построить маршрут (А*)",{ selectedTab = 1}, 12)
+
+                    TabButton("Кластеризация", { selectedTab = 2 }, 12)
+                    TabButton("Приобрести еду", { selectedTab = 3 }, 12)
                 }
 
                 Row(
@@ -88,12 +89,19 @@ fun TsuMapScreen() {
                         .padding(20.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
                 ) {
-                    TabButton("Кнопка 4") { selectedTab = 4 }
-                    TabButton("Кнопка 5") { selectedTab = 5 }
-                    TabButton("Кнопка 6") { selectedTab = 6 }
+                    TabButton("Выбор и обход достоприм.", { selectedTab = 4 }, 12)
+                    TabButton("Кнопка 5", { selectedTab = 5 }, 12)
+                    TabButton("Кнопка 6", { selectedTab = 6 }, 12)
                 }
 
-                TabContent(selectedTab)
+                if(selectedTab == 1)
+                {
+                    TabContentAStar(selectedTab)
+                }
+                else if(selectedTab == 2)
+                {
+                    TabContentClaster(selectedTab)
+                }
             }
         },
         sheetPeekHeight = 56.dp,
