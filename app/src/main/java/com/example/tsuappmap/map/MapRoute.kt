@@ -1,8 +1,7 @@
 package com.example.tsuappmap.map
 
 import android.graphics.Color
-import com.example.tsuappmap.map.CampusGrid
-import com.example.tsuappmap.algorithm.Astar.CustomObstracle
+import com.example.tsuappmap.algorithm.Astar.CustomObstacle
 import org.maplibre.android.annotations.Polygon
 import org.maplibre.android.annotations.PolygonOptions
 import org.maplibre.android.annotations.Polyline
@@ -54,7 +53,7 @@ object MapRoute {
 
     fun drawObstacles(map: MapLibreMap) {
         obstacklePolygons.forEach { map.removePolygon(it) }
-        obstacklePolygons = CustomObstracle.getAll().map {
+        obstacklePolygons = CustomObstacle.getAll().map {
             drawCell(map, it, Color.argb(180, 220, 50, 50))
         }
     }

@@ -1,6 +1,5 @@
 package com.example.tsuappmap.algorithm.Astar
 
-import com.example.tsuappmap.algorithm.Astar.CustomObstracle
 import com.example.tsuappmap.map.CampusGrid
 import java.util.PriorityQueue
 import kotlin.math.sqrt
@@ -107,9 +106,9 @@ object AStar {
                 if (dr == 0 && dc == 0) continue
                 val nRow = row + dr
                 val nCol = col + dc
-                if (!CustomObstracle.isWalkable(nRow, nCol)) continue
+                if (!CustomObstacle.isWalkable(nRow, nCol)) continue
                 if (dr != 0 && dc != 0) {
-                    if (!CustomObstracle.isWalkable(nRow, col) || !CustomObstracle.isWalkable(
+                    if (!CustomObstacle.isWalkable(nRow, col) || !CustomObstacle.isWalkable(
                             row, nCol)) continue
                 }
                 result.add(Pair(nRow, nCol))

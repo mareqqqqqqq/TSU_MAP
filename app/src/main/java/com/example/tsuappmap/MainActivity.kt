@@ -1,6 +1,5 @@
 package com.example.tsuappmap
 
-import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -18,35 +17,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.PolylineOptions
-import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapView
 import kotlinx.coroutines.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import com.example.tsuappmap.algorithm.Astar.AStar
-import com.example.tsuappmap.algorithm.Astar.CustomObstracle
+import com.example.tsuappmap.algorithm.Astar.CustomObstacle
 import com.example.tsuappmap.map.CampusGrid
 import com.example.tsuappmap.map.CampusMapView
 import com.example.tsuappmap.map.MapRoute
-import com.example.tsuappmap.map.drawFinalGrid
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +54,10 @@ fun TsuMapScreen() {
     var isObstacleMode by remember { mutableStateOf(false) }
     var placingStart by remember { mutableStateOf(false) }
     var placingEnd by remember { mutableStateOf(false) }
+    var mapRef by remember { mutableStateOf<MapLibreMap?>(null) }
+    var startPoint by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var endPoint by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var barierStart by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     var selectedTab by remember {mutableStateOf(0)}
 
@@ -116,6 +110,7 @@ fun TsuMapScreen() {
                     },
                     onToggleObstacle = {
                         isObstacleMode = !isObstacleMode
+                        barierStart = null
                         placingStart = false
                         placingEnd = false
                         android.widget.Toast.makeText(
@@ -139,8 +134,6 @@ fun TsuMapScreen() {
 
             CampusMapView(
                 onMapReady = { map ->
-                    var endPoint: Pair<Int, Int>? = null
-                    var startPoint: Pair<Int, Int>? = null
                     val animationJob = arrayOf<Job?>(null)
 
                     map.addOnMapClickListener { latLng ->
@@ -149,8 +142,19 @@ fun TsuMapScreen() {
 
                         when {
                             isObstacleMode -> {
-                                CustomObstracle.toggle(cell.first, cell.second)
-                                MapRoute.drawObstacles(map)
+                                if (barierStart == null) {
+                                    barierStart = cell
+                                    android.widget.Toast.makeText(
+                                        context, "Выбери конец барьера", android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                else {
+                                    val (r1, c1) = barierStart!!
+                                    val (r2, c2) = cell
+                                    CustomObstacle.addLine(r1, c1, r2, c2)
+                                    barierStart = null
+                                    MapRoute.drawObstacles(map)
+                                }
                             }
 
                             placingStart -> {

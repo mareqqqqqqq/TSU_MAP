@@ -1,7 +1,6 @@
 package com.example.tsuappmap.map
 
 import android.content.Context
-import androidx.compose.ui.graphics.vector.Path
 
 object CampusGrid {
     var rows: Int = 0
