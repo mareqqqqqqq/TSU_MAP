@@ -37,7 +37,12 @@ fun TabButton(label: String, onClick: () -> Unit, fontSize: Int) {
 
 
 @Composable
-fun TabContentAStar(selectedTab: Int ) {
+fun TabContent(selectedTab: Int,
+               isObstacleMode: Boolean,
+               onPlaceStart: () -> Unit,
+               onPlaceEnd: () -> Unit,
+               onToggleObstacle: () -> Unit
+               ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -49,57 +54,35 @@ fun TabContentAStar(selectedTab: Int ) {
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
             ) {
                 Button(
-                    onClick = {},
-                    modifier = Modifier.width(360.dp).height(65.dp),
+                    onClick = onPlaceStart,
+                    modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(red = 186, green = 184, blue = 97),
+                        containerColor = Color(red = 0, green = 0, blue = 188),
                         contentColor = Color.White
                     )
-                ) { Text("Поставить начальную точку") }
+                ) { Text("Стартовая точка") }
 
                 Button(
-                    onClick = {},
-                    modifier = Modifier.width(360.dp).height(65.dp),
+                    onClick = onPlaceEnd,
+                    modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(red = 186, green = 97, blue = 97),
+                        containerColor = Color(red = 0, green = 0, blue = 188),
                         contentColor = Color.White
                     )
-                ) { Text("Поставить конечную точку") }
+                ) { Text("Конечная точка") }
 
                 Button(
-                    onClick = {},
-                    modifier = Modifier.width(360.dp).height(65.dp),
+                    onClick = onToggleObstacle,
+                    modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(red = 151, green = 184, blue = 123),
+                        containerColor = Color(red = 0, green = 0, blue = 188),
                         contentColor = Color.White
                     )
-                ) { Text("Протянуть ленточку") }
-
-                Button(
-                    onClick = {},
-                    modifier = Modifier.width(360.dp).height(35.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(red = 184, green = 184, blue = 184),
-                        contentColor = Color.White
-                    )
-                ) { Text("Очистить") }
+                ) { Text(if (isObstacleMode) "Барьеры: ВКЛ" else "Барьеры: ВЫКЛ") }
             }
-        }
-    }
-}
-@Composable
-fun TabContentClaster(selectedTab: Int ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 20.dp)
-    ) {
-        when (selectedTab) {
             2 -> Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
             ) {
