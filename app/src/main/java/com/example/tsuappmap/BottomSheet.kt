@@ -29,7 +29,12 @@ fun TabButton(label: String, onClick: () -> Unit) {
 
 
 @Composable
-fun TabContent(selectedTab: Int) {
+fun TabContent(selectedTab: Int,
+               isObstacleMode: Boolean,
+               onPlaceStart: () -> Unit,
+               onPlaceEnd: () -> Unit,
+               onToggleObstacle: () -> Unit
+               ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -41,34 +46,34 @@ fun TabContent(selectedTab: Int) {
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
             ) {
                 Button(
-                    onClick = {},
+                    onClick = onPlaceStart,
                     modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
                         contentColor = Color.White
                     )
-                ) { Text("Кнопка 6") }
+                ) { Text("Стартовая точка") }
 
                 Button(
-                    onClick = {},
+                    onClick = onPlaceEnd,
                     modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
                         contentColor = Color.White
                     )
-                ) { Text("Кнопка 10") }
+                ) { Text("Конечная точка") }
 
                 Button(
-                    onClick = {},
+                    onClick = onToggleObstacle,
                     modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
                         contentColor = Color.White
                     )
-                ) { Text("Кнопка 12") }
+                ) { Text(if (isObstacleMode) "Барьеры: ВКЛ" else "Барьеры: ВЫКЛ") }
             }
 
             2 -> Box(

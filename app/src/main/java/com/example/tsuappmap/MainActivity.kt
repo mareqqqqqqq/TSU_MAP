@@ -1,5 +1,6 @@
 package com.example.tsuappmap
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -60,8 +61,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TsuMapScreen() {
     val context = LocalContext.current
+    var isObstacleMode by remember { mutableStateOf(false) }
+    var placingStart by remember { mutableStateOf(false) }
+    var placingEnd by remember { mutableStateOf(false) }
 
     var selectedTab by remember {mutableStateOf(0)}
+
 
 
 
@@ -93,7 +98,32 @@ fun TsuMapScreen() {
                     TabButton("Кнопка 6") { selectedTab = 6 }
                 }
 
-                TabContent(selectedTab)
+                TabContent(selectedTab = selectedTab,
+                    isObstacleMode = isObstacleMode,
+                    onPlaceStart = {
+                        isObstacleMode = false
+                        placingStart = true
+                        placingEnd = false
+                        android.widget.Toast.makeText(
+                            context, "Выбери стартовую точку", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    onPlaceEnd = {
+                        isObstacleMode = false
+                        placingStart = false
+                        placingEnd = true
+                        android.widget.Toast.makeText(
+                            context, "Выбери конечную точку", android.widget.Toast.LENGTH_SHORT).show()
+                    },
+                    onToggleObstacle = {
+                        isObstacleMode = !isObstacleMode
+                        placingStart = false
+                        placingEnd = false
+                        android.widget.Toast.makeText(
+                            context, if (isObstacleMode) "Режим барьера включёе" else "Режим барьера выключен",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    )
             }
         },
         sheetPeekHeight = 56.dp,
@@ -109,68 +139,59 @@ fun TsuMapScreen() {
 
             CampusMapView(
                 onMapReady = { map ->
-                    var isObstrackleMode = false
+                    var endPoint: Pair<Int, Int>? = null
                     var startPoint: Pair<Int, Int>? = null
-                    var animationJob: Job? = null
+                    val animationJob = arrayOf<Job?>(null)
 
                     map.addOnMapClickListener { latLng ->
                         val cell = CampusGrid.latLonToCell(latLng.latitude, latLng.longitude)
                             ?: return@addOnMapClickListener true
 
-                        if (isObstrackleMode) {
-                            CustomObstracle.toggle(cell.first, cell.second)
-                            MapRoute.drawObstracles(map)
-                        } else {
-                            if (!CustomObstracle.isWalkable(cell.first, cell.second)) {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "Это препятствие!",
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                                return@addOnMapClickListener true
+                        when {
+                            isObstacleMode -> {
+                                CustomObstracle.toggle(cell.first, cell.second)
+                                MapRoute.drawObstacles(map)
                             }
 
-                            if (startPoint == null) {
-                                startPoint = cell
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "Старт выбран, выбери конечную точку",
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                val (sRow, sCol) = startPoint!!
-                                val (eRow, eCol) = cell
-                                startPoint = null
+                            placingStart -> {
+                                val cell = CampusGrid.nearestWalkable(cell.first, cell.second)
+                                if (cell == null) {
+                                    android.widget.Toast.makeText(
+                                        context, "Нет доступных точек рядом",
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                else {
+                                    startPoint = cell
+                                    placingStart = false
+                                    MapRoute.setStartMarker(map, cell)
+                                    android.widget.Toast.makeText(
+                                        context, "Старт устанвлен", android.widget.Toast.LENGTH_SHORT
+                                    ).show()
 
-                                animationJob?.cancel()
-                                MapRoute.clearSearch(map)
-                                MapRoute.clearRoute(map)
+                                    endPoint?.let { end ->
+                                        launchAStar(map, context, cell, end, animationJob)
+                                    }
+                                }
+                            }
 
-                                animationJob = CoroutineScope(Dispatchers.Main).launch {
-                                    val steps = withContext(Dispatchers.Default) {
-                                        AStar.findPathWithSteps(sRow, sCol, eRow, eCol)
+                            placingEnd -> {
+                                val cell = CampusGrid.nearestWalkable(cell.first, cell.second)
+                                if (cell == null) {
+                                    android.widget.Toast.makeText(
+                                        context, "Нет доступных точек рядом", android.widget.Toast.LENGTH_SHORT
+                                    ).show()
                                     }
-                                    for (step in steps) {
-                                        if (step.visited != null && step.frontier != null) {
-                                            MapRoute.drawSearchStep(
-                                                map,
-                                                step.visited,
-                                                step.frontier,
-                                                step.current
-                                            )
-                                        }
-                                        delay(50L)
-                                    }
-                                    val lastStep = steps.last()
-                                    MapRoute.clearSearch(map)
-                                    if (lastStep.path != null) {
-                                        MapRoute.drawRoute(map, lastStep.path)
-                                    } else {
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            "Маршрут не найден",
-                                            android.widget.Toast.LENGTH_SHORT
-                                        ).show()
+                                else {
+                                    endPoint = cell
+                                    placingEnd = false
+                                    MapRoute.setEndMarker(map, cell)
+                                    android.widget.Toast.makeText(
+                                        context, "Конечная точка установлена", android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    startPoint?.let {  start ->
+                                        launchAStar(map, context, start, cell, animationJob)
                                     }
                                 }
                             }
@@ -192,6 +213,40 @@ fun TsuMapScreen() {
 }
 
 //lifecyclescope
+
+fun launchAStar(
+    map: MapLibreMap,
+    context: android.content.Context,
+    start: Pair<Int, Int>,
+    end: Pair<Int, Int>,
+    jobRef: Array<Job?>
+) {
+    jobRef[0]?.cancel()
+    MapRoute.clearSearch(map)
+    MapRoute.clearRoute(map)
+
+    jobRef[0] = CoroutineScope(Dispatchers.Main).launch {
+        val steps = withContext(Dispatchers.Default) {
+            AStar.findPathWithSteps(start.first, start.second, end.first, end.second)
+        }
+        for (step in steps) {
+            if (step.visited != null && step.frontier != null) {
+                MapRoute.drawSearchStep(map, step.visited, step.frontier, step.current)
+            }
+            delay(50L)
+        }
+        val lastStep = steps.last()
+        MapRoute.clearSearch(map)
+        if (lastStep.path != null) {
+            MapRoute.drawRoute(map, lastStep.path)
+        }
+        else {
+            android.widget.Toast.makeText(
+                context, "Маршрут не найден", android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+}
 
 fun drawFinalGrid(map: MapLibreMap, latMin: Double, latMax: Double, lngMin: Double, lngMax: Double, centerLat: Double) {
     val stepMeters = 8.0
