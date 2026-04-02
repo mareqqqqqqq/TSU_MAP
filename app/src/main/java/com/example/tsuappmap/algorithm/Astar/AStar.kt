@@ -1,5 +1,7 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Astar
 
+import com.example.tsuappmap.algorithm.Astar.CustomObstracle
+import com.example.tsuappmap.map.CampusGrid
 import java.util.PriorityQueue
 import kotlin.math.sqrt
 
@@ -130,4 +132,3 @@ object AStar {
         return path
     }
 }
-

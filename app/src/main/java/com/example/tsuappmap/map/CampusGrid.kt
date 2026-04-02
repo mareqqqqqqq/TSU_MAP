@@ -1,4 +1,4 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.map
 
 import android.content.Context
 import androidx.compose.ui.graphics.vector.Path
