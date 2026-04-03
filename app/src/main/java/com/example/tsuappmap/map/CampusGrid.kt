@@ -22,7 +22,7 @@ object CampusGrid {
         val uniqueX = sortedSetOf<Double>()
         val uniqueY = sortedSetOf<Double>()
 
-        context.assets.open("grid.csv").bufferedReader().use { reader -> reader.forEachLine { line ->
+        context.assets.open("pasik.csv").bufferedReader().use { reader -> reader.forEachLine { line ->
             val parts = line.trim().split(",")
             if (parts.size < 3) return@forEachLine
             val x = parts[0].toDoubleOrNull() ?: return@forEachLine
