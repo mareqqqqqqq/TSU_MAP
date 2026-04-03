@@ -1,15 +1,15 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Astar
 
-import androidx.compose.ui.graphics.Path
+import com.example.tsuappmap.map.CampusGrid
 import java.util.PriorityQueue
 import kotlin.math.sqrt
 
 object AStar {
 
     data class SearchStep(
-        val visited: Set<Pair<Int, Int>>,
-        val frontier: Set<Pair<Int, Int>>,
         val current: Pair<Int, Int>,
+        val visited: Set<Pair<Int, Int>>? = null,
+        val frontier: Set<Pair<Int, Int>>? = null,
         val path: List<Pair<Int, Int>>? = null
     )
 
@@ -36,6 +36,10 @@ object AStar {
         openSet.add(Node(startRow, startCol, 0.0, heuristic(startRow, startCol, endRow, endCol)))
         frontier.add(Pair(startRow, startCol))
 
+        val animationStep = 50
+        val maxSteps = 400
+        var stepCounter = 0
+
         while (openSet.isNotEmpty()) {
             val current = openSet.poll()!!
             val currentCell = Pair(current.row, current.col)
@@ -45,15 +49,27 @@ object AStar {
             frontier.remove(currentCell)
             visited.add(currentCell)
 
-            steps.add(SearchStep(
-                visited = visited.toSet(),
-                frontier = frontier.toSet(),
-                current = currentCell
-            ))
+            stepCounter++
+            if (stepCounter % animationStep == 0 && steps.size < maxSteps) {
+                steps.add(
+                    SearchStep(
+                        current = currentCell,
+                        visited = visited.toSet(),
+                        frontier = frontier.toSet()
+                    )
+                )
+            }
 
             if (current.row == endRow && current.col == endCol) {
                 val path = reconstructPath(cameFrom, endRow, endCol)
-                steps[steps.lastIndex] = steps.last().copy(path = path)
+                steps.add(
+                    SearchStep(
+                        current = currentCell,
+                        visited = visited.toSet(),
+                        frontier = frontier.toSet(),
+                        path = path
+                    )
+                )
                 return steps
             }
 
@@ -68,13 +84,13 @@ object AStar {
                     openSet.add(Node(nRow, nCol, newG, newG + h))
                     frontier.add(Pair(nRow, nCol))
                 }
+            }
         }
-    }
 
-        steps.add(SearchStep(visited.toSet(), frontier.toSet(),
-        Pair(startRow, startCol), path = null))
+        steps.add(SearchStep(Pair(startRow, startCol), visited.toSet(), frontier.toSet(),
+            null))
         return steps
-}
+    }
 
     private data class Node(val row: Int, val col: Int, val g: Double, val f: Double)
 
@@ -90,10 +106,10 @@ object AStar {
                 if (dr == 0 && dc == 0) continue
                 val nRow = row + dr
                 val nCol = col + dc
-                if (!CustomObstracle.isWalkable(nRow, nCol)) continue
+                if (!CustomObstacle.isWalkable(nRow, nCol)) continue
                 if (dr != 0 && dc != 0) {
-                    if (!CustomObstracle.isWalkable(row + dr, col) || !CustomObstracle.isWalkable(
-                            row, col + dc)) continue
+                    if (!CustomObstacle.isWalkable(nRow, col) || !CustomObstacle.isWalkable(
+                            row, nCol)) continue
                 }
                 result.add(Pair(nRow, nCol))
             }
@@ -115,4 +131,3 @@ object AStar {
         return path
     }
 }
-
