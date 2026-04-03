@@ -94,11 +94,11 @@ fun TsuMapScreen() {
                     TabButton("Кнопка 6", { selectedTab = 6 }, 12)
                 }
 
-                if(selectedTab == 1)
+                if (selectedTab == 1)
                 {
                     TabContentAStar(selectedTab)
                 }
-                else if(selectedTab == 2)
+                else if (selectedTab == 2)
                 {
                     TabContentClaster(selectedTab)
                 }
