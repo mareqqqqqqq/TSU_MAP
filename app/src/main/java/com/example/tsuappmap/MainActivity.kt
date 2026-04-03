@@ -84,6 +84,11 @@ fun TsuMapScreen() {
 
                         drawFinalGrid(map, latMin, latMax, lngMin, lngMax, centerTsu.latitude)
 
+                        // CafeData.showAllCafesOnMap(map);
+                        //CafeData.showClusterOnMap(map, k = 4, context = context)
+                        CafeData.showClustersManhattanOnMap(map, k = 4, context = context)
+
+
                         var isObstrackleMode = false
                         var startPoint: Pair<Int, Int>? = null
                         var animationJob: Job? = null
