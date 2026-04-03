@@ -89,6 +89,7 @@ object CafeData {
             )
         }
     }
+    //dfdfdfdf
 
     fun showClustersManhattanOnMap(map: MapLibreMap, k: Int = 3, context: Context) {
         val results = KMeansManhattan().cluster(defaultCafes, k)
