@@ -23,18 +23,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import org.maplibre.android.MapLibre
 import org.maplibre.android.annotations.PolylineOptions
-import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
-import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
-import org.maplibre.android.maps.MapView
 import kotlinx.coroutines.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -45,7 +38,7 @@ import com.example.tsuappmap.algorithm.Astar.CustomObstracle
 import com.example.tsuappmap.map.CampusGrid
 import com.example.tsuappmap.map.CampusMapView
 import com.example.tsuappmap.map.MapRoute
-import com.example.tsuappmap.map.drawFinalGrid
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

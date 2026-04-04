@@ -113,7 +113,7 @@ fun drawFinalGrid(map: MapLibreMap, latMin: Double, latMax: Double, lngMin: Doub
         currentLat += latStep
     }
 
-    var currentLng = startLng
+    var currentLng = startLng + lngStep
     while (currentLng <= lngMax) {
         map.addPolyline(
             PolylineOptions()
