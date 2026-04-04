@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tsuappmap.algorithm.Genetic.GeneticScreen
 
 @Composable
 fun TabButton(label: String, onClick: () -> Unit, fontSize: Int) {
@@ -107,9 +108,7 @@ fun TabContent(selectedTab: Int,
                 ) { Text("Поставить или поменять конечную точку") }
             }
 
-            3 -> Box(
-                modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))
-            ) { Text("Контент кнопки 3") }
+            3 -> GeneticScreen()
 
             4 -> Box(
                 modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))

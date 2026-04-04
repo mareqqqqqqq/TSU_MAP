@@ -1,6 +1,7 @@
 package com.example.tsuappmap.algorithm.Astar
 
 import com.example.tsuappmap.map.CampusGrid
+import kotlinx.coroutines.channels.Channel
 import java.util.PriorityQueue
 import kotlin.math.sqrt
 
@@ -8,37 +9,34 @@ object AStar {
 
     data class SearchStep(
         val current: Pair<Int, Int>,
-        val visited: Set<Pair<Int, Int>>? = null,
-        val frontier: Set<Pair<Int, Int>>? = null,
-        val path: List<Pair<Int, Int>>? = null
+        val visited: Set<Pair<Int, Int>>,
+        val frontier: Set<Pair<Int, Int>>,
+        val path: List<Pair<Int, Int>>? = null,
+        val done: Boolean = false
     )
 
-    fun findPathWithSteps(
+    suspend fun findPathWithChannel (
         startRow: Int, startCol: Int,
-        endRow: Int, endCol: Int
-    ): List<SearchStep> {
-        val steps = mutableListOf<SearchStep>()
-
+        endRow: Int, endCol: Int,
+        channel: Channel<SearchStep>
+    ) {
         val openSet = PriorityQueue<Node>(compareBy { it.f })
-
         val gScore = Array(CampusGrid.rows) {
             DoubleArray(CampusGrid.cols) { Double.MAX_VALUE }
         }
-
-        val cameFrom = Array(CampusGrid.rows) {
+        val cameFrom = Array (CampusGrid.rows) {
             arrayOfNulls<Pair<Int, Int>>(CampusGrid.cols)
         }
-
         val visited = mutableSetOf<Pair<Int, Int>>()
         val frontier = mutableSetOf<Pair<Int, Int>>()
 
         gScore[startRow][startCol] = 0.0
-        openSet.add(Node(startRow, startCol, 0.0, heuristic(startRow, startCol, endRow, endCol)))
+        openSet.add(Node(startRow, startCol, 0.0,
+            heuristic(startRow, startCol, endRow, endCol)))
         frontier.add(Pair(startRow, startCol))
 
-        val animationStep = 50
-        val maxSteps = 400
-        var stepCounter = 0
+        val animStep = 50
+        var counter = 0
 
         while (openSet.isNotEmpty()) {
             val current = openSet.poll()!!
@@ -49,34 +47,31 @@ object AStar {
             frontier.remove(currentCell)
             visited.add(currentCell)
 
-            stepCounter++
-            if (stepCounter % animationStep == 0 && steps.size < maxSteps) {
-                steps.add(
-                    SearchStep(
-                        current = currentCell,
-                        visited = visited.toSet(),
-                        frontier = frontier.toSet()
-                    )
-                )
+            counter++
+            if (counter % animStep == 0) {
+                channel.send(SearchStep (
+                    current = currentCell,
+                    visited = visited.toSet(),
+                    frontier = frontier.toSet()
+                ))
             }
 
             if (current.row == endRow && current.col == endCol) {
                 val path = reconstructPath(cameFrom, endRow, endCol)
-                steps.add(
-                    SearchStep(
-                        current = currentCell,
-                        visited = visited.toSet(),
-                        frontier = frontier.toSet(),
-                        path = path
-                    )
-                )
-                return steps
+                channel.send(SearchStep (
+                    current = currentCell,
+                    visited = visited.toSet(),
+                    frontier = frontier.toSet(),
+                    path = path,
+                    done  = true
+                ))
+                channel.close()
+                return
             }
 
             for ((nRow, nCol) in getNeighbours(current.row, current.col)) {
                 val stepCost = if (nRow != current.row && nCol != current.col) 1.414 else 1.0
                 val newG = gScore[current.row][current.col] + stepCost
-
                 if (newG < gScore[nRow][nCol]) {
                     gScore[nRow][nCol] = newG
                     cameFrom[nRow][nCol] = currentCell
@@ -87,9 +82,14 @@ object AStar {
             }
         }
 
-        steps.add(SearchStep(Pair(startRow, startCol), visited.toSet(), frontier.toSet(),
-            null))
-        return steps
+        channel.send(SearchStep (
+            current = Pair(startRow, startCol),
+            visited = visited.toSet(),
+            frontier = frontier.toSet(),
+            path = null,
+            done = true
+        ))
+        channel.close()
     }
 
     private data class Node(val row: Int, val col: Int, val g: Double, val f: Double)

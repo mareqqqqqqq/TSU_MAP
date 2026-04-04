@@ -41,6 +41,7 @@ import com.example.tsuappmap.map.CampusGrid
 import com.example.tsuappmap.map.CampusMapView
 import com.example.tsuappmap.map.MapRoute
 import com.example.tsuappmap.map.drawFinalGrid
+import kotlinx.coroutines.channels.Channel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -235,25 +236,33 @@ fun launchAStar(
     MapRoute.clearRoute(map)
 
     jobRef[0] = CoroutineScope(Dispatchers.Main).launch {
-        val steps = withContext(Dispatchers.Default) {
-            AStar.findPathWithSteps(start.first, start.second, end.first, end.second)
+        val channel = Channel<AStar.SearchStep>(capacity = 4)
+
+        val aStarJob = launch(Dispatchers.Default) {
+            AStar.findPathWithChannel(
+                start.first, start.second,
+                end.first, end.second,
+                channel
+            )
         }
-        for (step in steps) {
-            if (step.visited != null && step.frontier != null) {
-                MapRoute.drawSearchStep(map, step.visited, step.frontier, step.current)
-            }
+
+        for (step in channel) {
+            MapRoute.drawSearchStep(map, step.visited, step.frontier, step.current)
             delay(50L)
+            if (step.done) {
+                MapRoute.clearSearch(map)
+                if (step.path != null) {
+                    MapRoute.drawRoute(map, step.path)
+                }
+                else {
+                    android.widget.Toast.makeText(
+                        context, "Маршрут не найден", android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+                break
+            }
         }
-        val lastStep = steps.last()
-        MapRoute.clearSearch(map)
-        if (lastStep.path != null) {
-            MapRoute.drawRoute(map, lastStep.path)
-        }
-        else {
-            android.widget.Toast.makeText(
-                context, "Маршрут не найден", android.widget.Toast.LENGTH_SHORT
-            ).show()
-        }
+        aStarJob.cancel()
     }
 }
 
