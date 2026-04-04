@@ -1,6 +1,5 @@
 package com.example.tsuappmap.algorithm.Astar
 
-import com.example.tsuappmap.algorithm.Astar.CustomObstracle
 import com.example.tsuappmap.map.CampusGrid
 import java.util.PriorityQueue
 import kotlin.math.sqrt
@@ -37,7 +36,8 @@ object AStar {
         openSet.add(Node(startRow, startCol, 0.0, heuristic(startRow, startCol, endRow, endCol)))
         frontier.add(Pair(startRow, startCol))
 
-        val animationStep = 20
+        val animationStep = 50
+        val maxSteps = 400
         var stepCounter = 0
 
         while (openSet.isNotEmpty()) {
@@ -50,7 +50,7 @@ object AStar {
             visited.add(currentCell)
 
             stepCounter++
-            if (stepCounter % animationStep == 0) {
+            if (stepCounter % animationStep == 0 && steps.size < maxSteps) {
                 steps.add(
                     SearchStep(
                         current = currentCell,
@@ -106,9 +106,9 @@ object AStar {
                 if (dr == 0 && dc == 0) continue
                 val nRow = row + dr
                 val nCol = col + dc
-                if (!CustomObstracle.isWalkable(nRow, nCol)) continue
+                if (!CustomObstacle.isWalkable(nRow, nCol)) continue
                 if (dr != 0 && dc != 0) {
-                    if (!CustomObstracle.isWalkable(nRow, col) || !CustomObstracle.isWalkable(
+                    if (!CustomObstacle.isWalkable(nRow, col) || !CustomObstacle.isWalkable(
                             row, nCol)) continue
                 }
                 result.add(Pair(nRow, nCol))

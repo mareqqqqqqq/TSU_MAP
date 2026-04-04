@@ -22,7 +22,7 @@ object CampusGrid {
         val uniqueX = sortedSetOf<Double>()
         val uniqueY = sortedSetOf<Double>()
 
-        context.assets.open("grid.csv").bufferedReader().use { reader -> reader.forEachLine { line ->
+        context.assets.open("pasik.csv").bufferedReader().use { reader -> reader.forEachLine { line ->
             val parts = line.trim().split(",")
             if (parts.size < 3) return@forEachLine
             val x = parts[0].toDoubleOrNull() ?: return@forEachLine
@@ -69,5 +69,16 @@ object CampusGrid {
         val lon = Math.toDegrees(xMerc / 6378137.0)
         val lat = Math.toDegrees(2.0 * Math.atan(Math.exp(yMerc / 6378137.0)) - Math.PI / 2.0)
         return Pair(lat, lon)
+    }
+
+    fun nearestWalkable(row: Int, col: Int): Pair<Int, Int>? {
+        if (isWalkable(row, col)) return Pair(row, col)
+        for (dr in -1..1) {
+            for (dc in -1..1) {
+                if (dr == 0 && dc == 0) continue
+                if (isWalkable(row + dr, col + dc)) return Pair(row + dr, col + dc)
+            }
+        }
+        return null
     }
 }
