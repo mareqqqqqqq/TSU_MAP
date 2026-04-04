@@ -21,6 +21,13 @@ object MapRoute {
     private var startMarker: Marker? = null
     private var endMarker: Marker? = null
 
+    private var animPolygon = mutableListOf<Polygon>()
+
+    private var obstaclePolygons: List<Polygon> = emptyList()
+
+    private const val MAX_VISITED_PER_FRAME = 300
+    private const val MAX_FRONTIER_PER_FRAME = 150
+
 
     fun drawRoute (map: MapLibreMap, path: List<Pair<Int, Int>>) {
         clearRoute(map)
@@ -38,17 +45,37 @@ object MapRoute {
                        visited: Set<Pair<Int, Int>>,
                        frontier: Set<Pair<Int, Int>>,
                        current: Pair<Int, Int>) {
-        val newVisited = visited - drawnVisited
+        animPolygon.forEach {map.removePolygon(it)}
+        animPolygon.clear()
 
-        for (cell in newVisited) {
-            drawnFrontiers.remove(cell)?.let { map.removePolygon(it) }
-            visitedPolygons.add ( drawCell (map, cell, Color.argb(80, 150, 150, 150)))
-            drawnVisited.add(cell)
+        val frontierToShow = if (frontier.size <= MAX_FRONTIER_PER_FRAME) {
+            frontier
+        }
+        else {
+            frontier.sortedBy { (r, c) ->
+                val dr = r - current.first
+                val dc = c - current.second
+                dr * dc + dc * dc
+            }.take(MAX_FRONTIER_PER_FRAME).toSet()
         }
 
-        val newFrontier = frontier - drawnFrontiers.keys - drawnVisited
-        for (cell in newFrontier) {
-            drawnFrontiers[cell] = drawCell (map, cell, Color.argb(180, 255, 200, 0))
+        val visitedToShow = if (visited.size <= MAX_VISITED_PER_FRAME) {
+            visited
+        }
+        else {
+            visited.sortedBy { (r, c) ->
+                val dr = r - current.first
+                val dc = c - current.second
+                dr * dr + dc * dc
+            }.take(MAX_VISITED_PER_FRAME).toSet()
+        }
+
+        for (cell in visitedToShow) {
+            animPolygon.add ( drawCell (map, cell, Color.argb(80, 150, 150, 150)))
+        }
+
+        for (cell in frontierToShow) {
+            animPolygon.add(drawCell (map, cell, Color.argb(180, 255, 200, 0)))
         }
     }
 

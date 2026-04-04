@@ -248,7 +248,7 @@ fun launchAStar(
 
         for (step in channel) {
             MapRoute.drawSearchStep(map, step.visited, step.frontier, step.current)
-            delay(50L)
+            delay(80L)
             if (step.done) {
                 MapRoute.clearSearch(map)
                 if (step.path != null) {
