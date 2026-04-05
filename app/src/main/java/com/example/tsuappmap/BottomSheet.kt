@@ -42,7 +42,8 @@ fun TabContent(selectedTab: Int,
                isObstacleMode: Boolean,
                onPlaceStart: () -> Unit,
                onPlaceEnd: () -> Unit,
-               onToggleObstacle: () -> Unit
+               onToggleObstacle: () -> Unit,
+               onReset: () -> Unit
                ) {
     Box(
         modifier = Modifier
@@ -56,7 +57,7 @@ fun TabContent(selectedTab: Int,
             ) {
                 Button(
                     onClick = onPlaceStart,
-                    modifier = Modifier.width(360.dp).height(70.dp),
+                    modifier = Modifier.width(360.dp).height(52.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -66,7 +67,7 @@ fun TabContent(selectedTab: Int,
 
                 Button(
                     onClick = onPlaceEnd,
-                    modifier = Modifier.width(360.dp).height(70.dp),
+                    modifier = Modifier.width(360.dp).height(52.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -76,13 +77,20 @@ fun TabContent(selectedTab: Int,
 
                 Button(
                     onClick = onToggleObstacle,
-                    modifier = Modifier.width(360.dp).height(70.dp),
+                    modifier = Modifier.width(360.dp).height(52.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
                         contentColor = Color.White
                     )
                 ) { Text(if (isObstacleMode) "Барьеры: ВКЛ" else "Барьеры: ВЫКЛ") }
+
+                Button(
+                    onClick = onReset, modifier = Modifier.width(360.dp).height(52.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor =
+                        Color(red = 0, green = 0, blue = 188), contentColor = Color.White)
+                ) { Text("Сбросить всё") }
             }
             2 -> Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)

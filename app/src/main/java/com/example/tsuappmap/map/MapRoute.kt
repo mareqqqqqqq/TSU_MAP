@@ -92,10 +92,15 @@ object MapRoute {
     }
 
     fun clearSearch(map: MapLibreMap) {
+        animPolygon.forEach { map.removePolygon(it) }
+        animPolygon.clear()
+
         visitedPolygons.forEach { map.removePolygon(it) }
-        drawnFrontiers.values.forEach { map.removePolygon(it) }
         visitedPolygons.clear()
         drawnVisited.clear()
+
+        drawnFrontiers.values.forEach { map.removePolygon(it) }
+        drawnFrontiers.clear()
     }
 
     fun setStartMarker(map: MapLibreMap, cell: Pair<Int, Int>) {

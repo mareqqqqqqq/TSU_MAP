@@ -123,6 +123,23 @@ fun TsuMapScreen() {
                             context, if (isObstacleMode) "Режим барьера включёе" else "Режим барьера выключен",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
+                    },
+
+                    onReset = {
+                        startPoint = null
+                        endPoint = null
+                        isObstacleMode = false
+                        barierStart = null
+                        CustomObstacle.clear()
+                        mapRef?.let { map ->
+                            MapRoute.clearMarkers(map)
+                            MapRoute.clearRoute(map)
+                            MapRoute.clearSearch(map)
+                            MapRoute.drawObstacles(map)
+                        }
+                        android.widget.Toast.makeText(
+                            context, "Всё сброшено", android.widget.Toast.LENGTH_SHORT
+                        ).show()
                     }
                     )
             }
@@ -140,6 +157,7 @@ fun TsuMapScreen() {
 
             CampusMapView(
                 onMapReady = { map ->
+                    mapRef = map
                     val animationJob = arrayOf<Job?>(null)
 
                     map.addOnMapClickListener { latLng ->
