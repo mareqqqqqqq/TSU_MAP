@@ -42,12 +42,22 @@ import com.example.tsuappmap.map.CampusMapView
 import com.example.tsuappmap.map.MapRoute
 import com.example.tsuappmap.map.drawFinalGrid
 import kotlinx.coroutines.channels.Channel
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         MapLibre.getInstance(this)
         CampusGrid.load(this)
+
+        requestPermissions(
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION), 1001
+        )
         setContent {
             TsuMapScreen()
         }
@@ -63,8 +73,8 @@ fun TsuMapScreen() {
     var startPoint by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var endPoint by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var barierStart by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-
     var selectedTab by remember {mutableStateOf(0)}
+    val animationJob = arrayOf<Job?>(null)
 
 
 
@@ -140,7 +150,75 @@ fun TsuMapScreen() {
                         android.widget.Toast.makeText(
                             context, "Всё сброшено", android.widget.Toast.LENGTH_SHORT
                         ).show()
-                    }
+                    },
+
+                    onMyLocationStart = {
+                        val loc = getMyLocation(context)
+                        if (loc == null) {
+                            android.widget.Toast.makeText(context, "Нет доступа к геолокации",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        else {
+                            val (lat, lon) = loc
+                            val cell = CampusGrid.latLonToCell(lat, lon)?:
+                            CampusGrid.nearestWalkable(
+                                CampusGrid.latLonToCell(lat, lon)?.first ?: 0,
+                                CampusGrid.latLonToCell(lat, lon)?.second ?: 0
+                            )
+                            if (cell == null) {
+                                android.widget.Toast.makeText(context, "Вы вне зоны карты",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            else {
+                                startPoint = cell
+                                mapRef?.let { map ->
+                                    MapRoute.setStartMarker(map, cell)
+                                endPoint?.let { end ->
+                                    launchAStar(map, context, cell, end, animationJob)
+                                }
+                                }
+                                android.widget.Toast.makeText(
+                                    context, "Старт - ваше текущее местоположение",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    },
+
+                    onMyLocationEnd = {
+                        val loc = getMyLocation(context)
+                        if (loc == null) {
+                            android.widget.Toast.makeText(context, "Нет доступа к геолокации",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        else {
+                            val (lat, lon) = loc
+                            val rawCell = CampusGrid.latLonToCell(lat, lon)
+                            val cell = if (rawCell != null) CampusGrid.nearestWalkable(
+                                rawCell.first, rawCell.second) else null
+                            if (cell == null) {
+                                android.widget.Toast.makeText(context, "Вы вне зоны карты",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            else {
+                                startPoint = cell
+                                mapRef?.let { map ->
+                                    MapRoute.setStartMarker(map, cell)
+                                    startPoint?.let { start ->
+                                        launchAStar(map, context, start, cell, animationJob)
+                                    }
+                                }
+                                android.widget.Toast.makeText(
+                                    context, "Финиш - ваше текущее местоположение",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                    },
                     )
             }
         },
@@ -158,7 +236,7 @@ fun TsuMapScreen() {
             CampusMapView(
                 onMapReady = { map ->
                     mapRef = map
-                    val animationJob = arrayOf<Job?>(null)
+
 
                     map.addOnMapClickListener { latLng ->
                         val cell = CampusGrid.latLonToCell(latLng.latitude, latLng.longitude)
@@ -313,4 +391,21 @@ fun drawFinalGrid(map: MapLibreMap, latMin: Double, latMax: Double, lngMin: Doub
             .color(lineColor).width(lineWidth))
         currentLng += lngStep
     }
+}
+
+fun getMyLocation(context: android.content.Context): Pair<Double, Double>? {
+    if (ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION
+    ) != PackageManager.PERMISSION_GRANTED) {
+        return null
+    }
+
+    val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE)
+            as LocationManager
+    val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+    for (provider in providers) {
+        val loc = lm.getLastKnownLocation(provider)
+        if (loc != null) return Pair(loc.latitude, loc.longitude)
+    }
+    return null
 }

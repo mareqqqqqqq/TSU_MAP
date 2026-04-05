@@ -2,7 +2,9 @@ package com.example.tsuappmap
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,7 +45,9 @@ fun TabContent(selectedTab: Int,
                onPlaceStart: () -> Unit,
                onPlaceEnd: () -> Unit,
                onToggleObstacle: () -> Unit,
-               onReset: () -> Unit
+               onReset: () -> Unit,
+               onMyLocationStart: () -> Unit,
+               onMyLocationEnd: () -> Unit
                ) {
     Box(
         modifier = Modifier
@@ -53,11 +57,12 @@ fun TabContent(selectedTab: Int,
     ) {
         when (selectedTab) {
             0, 1 -> Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
             ) {
                 Button(
                     onClick = onPlaceStart,
-                    modifier = Modifier.width(360.dp).height(52.dp),
+                    modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -67,7 +72,7 @@ fun TabContent(selectedTab: Int,
 
                 Button(
                     onClick = onPlaceEnd,
-                    modifier = Modifier.width(360.dp).height(52.dp),
+                    modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -77,7 +82,7 @@ fun TabContent(selectedTab: Int,
 
                 Button(
                     onClick = onToggleObstacle,
-                    modifier = Modifier.width(360.dp).height(52.dp),
+                    modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -86,11 +91,25 @@ fun TabContent(selectedTab: Int,
                 ) { Text(if (isObstacleMode) "Барьеры: ВКЛ" else "Барьеры: ВЫКЛ") }
 
                 Button(
-                    onClick = onReset, modifier = Modifier.width(360.dp).height(52.dp),
+                    onClick = onReset, modifier = Modifier.width(360.dp).height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor =
                         Color(red = 0, green = 0, blue = 188), contentColor = Color.White)
                 ) { Text("Сбросить всё") }
+
+                Button(
+                    onClick = onMyLocationStart, modifier = Modifier.width(360.dp).height(70.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor =
+                        Color(red = 0, green = 0, blue = 188), contentColor = Color.White)
+                ) { Text("Моё местоположение - Старт") }
+
+                Button(
+                    onClick = onMyLocationEnd, modifier = Modifier.width(360.dp).height(70.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor =
+                        Color(red = 0, green = 0, blue = 188), contentColor = Color.White)
+                ) { Text("Моё местоположение - Конец") }
             }
             2 -> Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
