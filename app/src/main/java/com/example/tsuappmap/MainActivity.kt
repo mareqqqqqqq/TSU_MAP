@@ -1,10 +1,8 @@
 package com.example.tsuappmap
 
-import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.experimental.Experimental
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,9 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -27,8 +23,6 @@ import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import org.maplibre.android.MapLibre
-import org.maplibre.android.annotations.PolylineOptions
-import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import kotlinx.coroutines.*
 import androidx.compose.runtime.getValue
@@ -40,7 +34,6 @@ import com.example.tsuappmap.algorithm.Astar.CustomObstacle
 import com.example.tsuappmap.map.CampusGrid
 import com.example.tsuappmap.map.CampusMapView
 import com.example.tsuappmap.map.MapRoute
-import com.example.tsuappmap.map.drawFinalGrid
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,7 +116,7 @@ fun TsuMapScreen() {
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
                     }
-                    )
+                )
             }
         },
         sheetPeekHeight = 56.dp,
@@ -190,7 +183,7 @@ fun TsuMapScreen() {
                                     android.widget.Toast.makeText(
                                         context, "Нет доступных точек рядом", android.widget.Toast.LENGTH_SHORT
                                     ).show()
-                                    }
+                                }
                                 else {
                                     endPoint = cell
                                     placingEnd = false
@@ -257,33 +250,3 @@ fun launchAStar(
     }
 }
 
-fun drawFinalGrid(map: MapLibreMap, latMin: Double, latMax: Double, lngMin: Double, lngMax: Double, centerLat: Double) {
-    val stepMeters = 8.0
-    val latStep = stepMeters / 111320.0
-    val lngStep = stepMeters / (111320.0 * Math.cos(Math.toRadians(centerLat)))
-
-    val lineColor = Color.argb(100, 0, 0, 0)
-
-    val lineWidth = 0.5f
-
-    val startLat = Math.floor(latMin / latStep) * latStep
-    val startLng = Math.floor(lngMin / lngStep) * lngStep
-
-
-    var currentLat = startLat
-    while (currentLat <= latMax) {
-        map.addPolyline(PolylineOptions()
-            .add(LatLng(currentLat, lngMin), LatLng(currentLat, lngMax))
-            .color(lineColor).width(lineWidth))
-        currentLat += latStep
-    }
-
-
-    var currentLng = startLng
-    while (currentLng <= lngMax) {
-        map.addPolyline(PolylineOptions()
-            .add(LatLng(latMin, currentLng), LatLng(latMax, currentLng))
-            .color(lineColor).width(lineWidth))
-        currentLng += lngStep
-    }
-}

@@ -42,7 +42,7 @@ fun TabContent(selectedTab: Int,
                onPlaceStart: () -> Unit,
                onPlaceEnd: () -> Unit,
                onToggleObstacle: () -> Unit
-               ) {
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()

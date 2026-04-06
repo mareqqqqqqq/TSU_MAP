@@ -1,4 +1,5 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Claster
+
 import org.maplibre.android.geometry.LatLng
 
 class KMeansManhattan {

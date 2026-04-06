@@ -1,4 +1,4 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Claster
 import org.maplibre.android.geometry.LatLng
 import kotlin.math.sqrt
 
@@ -135,7 +135,7 @@ class Kmeans {
         val latDiff = (a.latitude - b.latitude) * 111320.0
         val lngDiff = (a.longitude - b.longitude) * 111320.0
 
-        return kotlin.math.sqrt(latDiff * latDiff + lngDiff * lngDiff)
+        return sqrt(latDiff * latDiff + lngDiff * lngDiff)
     }
 
 
