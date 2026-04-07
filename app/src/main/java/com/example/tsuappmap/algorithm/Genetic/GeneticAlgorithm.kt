@@ -1,5 +1,6 @@
 package com.example.tsuappmap.algorithm.Genetic
 
+import androidx.compose.material3.Card
 import com.example.tsuappmap.Cafe
 import com.example.tsuappmap.CafeData
 import java.util.Calendar
@@ -9,31 +10,38 @@ import kotlin.random.Random
 object GeneticAlgorithm {
     private const val WALK_SPEED_M_PER_MIN = 83.3
 
-    val cafeMenu: Map<String, List<String>> = mapOf(
-        "Старбукс" to listOf("Кофе"),
-        "Сибирские блины" to listOf("Кофе"),
-        "Ростикс" to listOf("Кофе"),
-        "Столовая тгу" to listOf("Кофе"),
-        "кафе минутка" to listOf("Кофе"),
-        "ресто место" to listOf("Кофе"),
-        "сыр бор" to listOf("Кофе"),
-        "батина шаурма" to listOf("Кофе"),
-        "ярче" to listOf("Кофе"),
-        "белка кофе" to listOf("Кофе"),
-        "петрушка" to listOf("Кофе"),
-        "NOVA" to listOf("Кофе"),
-        "Mindaйк кофе" to listOf("Кофе"),
-        "Harat's Pub" to listOf("Кофе"),
-        "Бристоль" to listOf("Кофе"),
-        "Подкова" to listOf("Кофе"),
-        "Шашлычный дом" to listOf("Кофе"),
-        "Пятерочка" to listOf("Кофе"),
-        "Экспресс" to listOf("Кофе"),
-        "Мини-Микс" to listOf("Кофе"),
-        "Научка" to listOf("Кофе"),
+    val cafeInfo: Map<String, CafeInfo> = mapOf(
+        "Старбукс" to CafeInfo(listOf("Кофе, Пиво"), 8, 20),
+        "Сибирские блины" to CafeInfo(listOf("Кофе, Булочки"), 8, 20),
+        "Ростикс" to CafeInfo(listOf("Кофе, Молоко"), 8, 20),
+        "Столовая тгу" to CafeInfo(listOf("Кофе"), 8, 20),
+        "кафе минутка" to CafeInfo(listOf("Кофе"), 8, 20),
+        "ресто место" to CafeInfo(listOf("Кофе"), 8, 20),
+        "сыр бор" to CafeInfo(listOf("Кофе"), 8, 20),
+        "батина шаурма" to CafeInfo(listOf("Кофе"), 8, 20),
+        "ярче" to CafeInfo(listOf("Кофе"), 8, 20),
+        "белка кофе" to CafeInfo(listOf("Кофе"), 8, 20),
+        "петрушка" to CafeInfo(listOf("Кофе"), 8, 20),
+        "NOVA" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Mindaйк кофе" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Harat's Pub" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Бристоль" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Подкова" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Шашлычный дом" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Пятерочка" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Экспресс" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Мини-Микс" to CafeInfo(listOf("Кофе"), 8, 20),
+        "Научка" to CafeInfo(listOf("Кофе"), 8, 20),
     )
 
-    val allMenuItems: List<String> = cafeMenu.values.flatten().distinct().sorted()
+    data class CafeInfo(
+        val menu: List<String>,
+        val openHour: Int,
+        val closeHour: Int
+    )
+
+    val cafeMenu: Map<String, List<String>> get() = cafeInfo.mapValues { it.value.menu}
+    val allMenuItems: List<String> = cafeInfo.values.flatMap{ it.menu }.distinct().sorted()
 
     data class Individual (
         val route: List<Cafe>,
@@ -94,35 +102,48 @@ object GeneticAlgorithm {
         val remaining = selectedItems.toMutableList()
         val result = mutableListOf<Cafe>()
         val allCafes = CafeData.getAllCafes()
-        val now = Calendar.getInstance()
-        val currentHour = now.get(Calendar.HOUR_OF_DAY)
+        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
         while (remaining.isNotEmpty()) {
-            val best = allCafes.filter { cafe ->  val menu = cafeMenu[cafe.name] ?: return@filter false
-            menu.any {it in remaining}
+            val best = allCafes.filter { cafe ->  val info = cafeInfo[cafe.name] ?: return@filter false
+                val isOpen = currentHour >= info.openHour && currentHour < info.closeHour
+                isOpen && info.menu.any { it in remaining }
             }
         .maxByOrNull { cafe ->
-            cafeMenu[cafe.name]?.count { it in remaining } ?: 0
+            val info = cafeInfo[cafe.name] ?: return@maxByOrNull 0
+            val count = info.menu.count{ it in remaining }
+            val closingSoon = (info.closeHour - currentHour) <= 2
+            if (closingSoon) count + 100 else count
             } ?: break
 
-            val  covered = cafeMenu[best.name]?.filter { it in remaining } ?: break
+            val info = cafeInfo[best.name] ?: break
+            val  covered = info.menu.filter { it in remaining } ?: break
             if (covered.isEmpty()) break
             result.add(best)
             remaining.removeAll(covered.toSet())
         }
-
         return result
     }
 
     private fun calcFitness(route: List<Cafe>, uLat: Double, uLon: Double): Double {
         if (route.isEmpty()) return 0.0
+        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         var totalMin = 0.0
         var prevLat = uLat
         var prevLon = uLon
+
         for (cafe in route) {
             totalMin += metersToMinutes (
                 euclideanMeters(prevLat, prevLon, cafe.location.latitude, cafe.location.longitude)
             )
+
+            val info = cafeInfo[cafe.name]
+            if (info != null) {
+                val minutesToClose = (info.closeHour - currentHour) * 60.0
+                if (minutesToClose in 0.0..60.0) {
+                    totalMin += (60.0 - minutesToClose) * 3
+                }
+            }
             prevLat = cafe.location.latitude
             prevLon = cafe.location.longitude
         }

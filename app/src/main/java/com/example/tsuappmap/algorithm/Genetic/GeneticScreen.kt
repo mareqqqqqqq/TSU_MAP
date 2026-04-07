@@ -1,6 +1,5 @@
 package com.example.tsuappmap.algorithm.Genetic
 
-import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,7 +29,7 @@ fun GeneticScreen(
     val selected = remember { mutableStateListOf<String>() }
 
     var isRunning by remember { mutableStateOf(false) }
-    var generetion by remember { mutableStateOf(0) }
+    var generation by remember { mutableStateOf(0) }
     var bestRoute by remember { mutableStateOf<GeneticAlgorithm.Individual?>(null) }
     var totalTime by remember { mutableStateOf(0.0) }
     var noSolution by remember { mutableStateOf(false) }
@@ -74,7 +73,7 @@ fun GeneticScreen(
                 if (selected.isEmpty()) return@Button
                 isRunning = true
                 noSolution = false
-                generetion = 0
+                generation = 0
                 bestRoute = null
 
                 scope.launch {
@@ -86,7 +85,7 @@ fun GeneticScreen(
                             generations = 150,
                             popSize = 40,
                             onGeneration = { gen, best ->
-                                generetion = gen
+                                generation = gen
                                 bestRoute = best
                             }
                         )
@@ -120,7 +119,7 @@ fun GeneticScreen(
                 containerColor = Color(0xFFDCEEFF)
             )
         ) {
-            Text( if (isRunning) "Поиск... покление $generetion" else "Найти маршрут")
+            Text( if (isRunning) "Поиск... покление $generation" else "Найти маршрут")
         }
 
         if (noSolution) {
