@@ -2,12 +2,10 @@ package com.example.tsuappmap
 import kotlin.math.log2
 
 
-// features - признаки location, budget, timop
-// label -
-// sample - пример
+
 data class Sample(
-    val features: Map<String, String>, // словарь
-    val labels: String // Yarche
+    val features: Map<String, String>,
+    val label: String
 )
 
 sealed class TreeNode {
@@ -22,11 +20,11 @@ sealed class TreeNode {
 }
 
 fun parseCSV(csv: String) : Pair<List<Sample>, List<String>> {
-    val lines = csv.trim().lines().filter { it.isNotBlank() } // разбивает на массив строк
+    val lines = csv.trim().lines().filter { it.isNotBlank() }
     require(lines.size >= 2) { "CSV должен содежать заголовок и хотя бы одну строку" }
 
     val headers = lines[0].split(",").map { it.trim() }
-    val featureNames = headers.dropLast(1) // удалит последний, там у нас ответ, wether location итд
+    val featureNames = headers.dropLast(1)
     val targetName = headers.last()
 
     val samples = lines.drop(1).mapIndexed { idx, line ->
@@ -44,10 +42,10 @@ fun parseCSV(csv: String) : Pair<List<Sample>, List<String>> {
 
 fun entropy(samples: List<Sample>): Double {
     if (samples.isEmpty()) return 0.0
-    val total = samples.size.toDouble() // сохраним количество примеров как double
+    val total = samples.size.toDouble()
 
     return samples
-        .groupBy { it.labels }
+        .groupBy { it.label }
         .values
         .sumOf {
             group ->
@@ -56,15 +54,51 @@ fun entropy(samples: List<Sample>): Double {
         }
 }
 
+fun informationGain(samples: List<Sample>, feature: String) : Double {
+    val total = samples.size.toDouble()
+    val parentEntropy = entropy(samples)
+
+    val weightedChildEntropy = samples
+        .groupBy { it.features[feature] ?: "?" }
+        .values
+        .sumOf { subset -> (subset.size / total) * entropy(subset) }
 
 
+    return parentEntropy - weightedChildEntropy
+}
 
 
+private fun majorityLabel(samples: List<Sample>) : String =
+    samples.groupBy { it.label }
+        .maxByOrNull { it.value.size }!!
+        .key
 
+fun buildTree(samples: List<Sample>, features: List<String>) : TreeNode {
+    val uniqueLabels = samples.map { it.label }.distinct()
+    if (uniqueLabels.size == 1) {
+        return TreeNode.Leaf(uniqueLabels[0])
+    }
 
+    if (features.isEmpty()) {
+        return TreeNode.Leaf(majorityLabel(samples))
+    }
 
+    val bestFeature = features.maxByOrNull {
+        informationGain(samples, it)
+    } !!
 
+    if (informationGain(samples, bestFeature) <= 0.0) {
+        return TreeNode.Leaf(majorityLabel(samples))
+    }
 
+    val remainingFeatures= features - bestFeature
+
+    val branches = samples
+        .groupBy { it.features[bestFeature] ?: "?"}
+        .mapValues { (_, subset) -> buildTree(subset, remainingFeatures)}
+
+    return TreeNode.Decision(bestFeature, branches)
+}
 
 fun main() {
     val csv = """
@@ -78,9 +112,6 @@ fun main() {
         second_building,medium,medium,full_meal,medium,good,Main_Cafeteria
         second_building,low,short,snack,low,bad,Vending_Machine
         campus_center,medium,short,pancakes,medium,good,Siberian_Pancakes
-    """.trimIndent() // убирает лишние отступы
-
-
-
+    """.trimIndent()
 }
 
