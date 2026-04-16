@@ -7,7 +7,7 @@ object AntColony {
     fun solve(distMatrix: Array<DoubleArray>): List<Int> {
         val alpha = 1.0
         val beta = 2.0
-        val isp = 0.1
+        val isp = 0.25
         val q = 100.0
         val iterations = 300
         val n = distMatrix.size

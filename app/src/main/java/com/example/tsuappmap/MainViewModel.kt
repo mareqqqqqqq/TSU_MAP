@@ -140,7 +140,7 @@ class MainViewModel : ViewModel() {
             if (lastStep.path != null) {
                 MapRoute.drawRoute(map, lastStep.path)
             } else {
-                android.widget.Toast.makeText(
+                Toast.makeText(
                     context, "Маршрут не найден", android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
@@ -178,7 +178,7 @@ class MainViewModel : ViewModel() {
     private fun handleStartClick(cell: Pair<Int, Int>, map: MapLibreMap, context: Context) {
         val walkable = CampusGrid.nearestWalkable(cell.first, cell.second)
         if (walkable == null) {
-            Toast.makeText(context, "Нет доступных точек рядом", android.widget.Toast.LENGTH_SHORT)
+            Toast.makeText(context, "Нет доступных точек рядом", Toast.LENGTH_SHORT)
                 .show()
             return
         }
@@ -314,7 +314,7 @@ class MainViewModel : ViewModel() {
                 return@launch
             }
 
-            val (segments, orderedCells, totalPoints) = result
+            val (segments, orderedCells) = result
             MapRouteForAnt.drawAntRoute(context, map, segments, orderedCells)
         }
     }

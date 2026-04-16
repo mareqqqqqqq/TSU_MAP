@@ -9,7 +9,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import org.maplibre.android.annotations.Icon
-
 import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.MarkerOptions
 import org.maplibre.android.annotations.PolylineOptions
@@ -30,7 +29,6 @@ object MapRouteForAnt {
         Color.rgb(0, 200, 200),
         Color.rgb(220, 0, 150),
         Color.rgb(100, 180, 0),
-
         Color.rgb(255, 80, 0),
         Color.rgb(0, 100, 200),
         Color.rgb(180, 100, 0),
@@ -67,8 +65,6 @@ object MapRouteForAnt {
         clearAntRoute(map)
 
         segments.forEachIndexed { index, segment ->
-            if (segment.isEmpty()) return@forEachIndexed
-
             val color = segmentColors[index % segmentColors.size]
             val points = segment.map { (row, col) ->
                 val (lat, lon) = CampusGrid.cellToLatLon(row, col)
@@ -84,12 +80,12 @@ object MapRouteForAnt {
 
         cells.forEachIndexed { index, cell ->
             val (lat, lon) = CampusGrid.cellToLatLon(cell.first, cell.second)
-            val label = if (index == 0) "ф " else "$index"
+            val label = if (index == 0) "Старт" else "$index"
             val bgColor = if (index == 0) Color.rgb(
                 0,
                 160,
                 80
-            ) else segmentColors[(index - 1) % segmentColors.size]
+            ) else segmentColors[(index - 1)]
             val icon = makeNumberedIcon(context, label, bgColor)
             val marker = map.addMarker(
                 MarkerOptions().position(LatLng(lat, lon)).icon(icon)

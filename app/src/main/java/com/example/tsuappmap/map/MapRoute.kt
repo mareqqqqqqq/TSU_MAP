@@ -135,8 +135,6 @@ object MapRoute {
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        paint.color = Color.argb(60, 0, 0, 0)
-        canvas.drawCircle(size / 2f + 2f, size / 2f + 2f, size / 2f - 4f, paint)
         paint.color = color
         canvas.drawCircle(size / 2f, size / 2f, size / 2f - 4f, paint)
         paint.color = Color.WHITE
