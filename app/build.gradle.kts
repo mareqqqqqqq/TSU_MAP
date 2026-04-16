@@ -1,4 +1,3 @@
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -47,6 +46,11 @@ kotlin {
     }
 
 }
+
+configurations.all {
+    exclude(group = "com.google.guava", module = "listenablefuture")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -66,4 +70,5 @@ dependencies {
 
     implementation("org.maplibre.gl:android-sdk:11.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
 }

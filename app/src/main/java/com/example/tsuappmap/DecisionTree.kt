@@ -40,6 +40,20 @@ fun parseCSV(csv: String) : Pair<List<Sample>, List<String>> {
     return Pair(samples, featureNames)
 }
 
+fun predict(tree: TreeNode, ans: Map<String, String>): String {
+    var node: TreeNode = tree
+    while (node is TreeNode.Decision) {
+        var answer = ans[node.feature] ?:return "Нет даных"
+        node = node.branches[answer] ?: return "Нет данных"
+    }
+
+    return (node as TreeNode.Leaf).label
+}
+
+fun getFeatureValues(samples: List<Sample>, feature: String): List<String> =
+    samples.mapNotNull {it.features[feature] }.distinct().sorted()
+
+
 fun entropy(samples: List<Sample>): Double {
     if (samples.isEmpty()) return 0.0
     val total = samples.size.toDouble()
@@ -100,18 +114,32 @@ fun buildTree(samples: List<Sample>, features: List<String>) : TreeNode {
     return TreeNode.Decision(bestFeature, branches)
 }
 
+val DEFAULT_CSV = """
+location,budget,time_available,food_type,queue_tolerance,weather,recommended_place
+main_building,low,medium,full_meal,medium,good,Main_Cafeteria
+main_building,low,short,snack,low,good,Yarche
+main_building,medium,short,coffee,low,good,Bus_Stop_Coffee
+main_building,high,medium,coffee,medium,good,Starbooks
+second_building,low,very_short,snack,low,good,Vending_Machine
+second_building,medium,short,coffee,medium,good,Second_Building_Cafe
+second_building,medium,medium,full_meal,medium,good,Main_Cafeteria
+second_building,low,short,snack,low,bad,Vending_Machine
+campus_center,medium,short,pancakes,medium,good,Siberian_Pancakes
+""".trimIndent()
+
 fun main() {
-    val csv = """
-        location,budget,time_available,food_type,queue_tolerance,weather,recommended_place
-        main_building,low,medium,full_meal,medium,good,Main_Cafeteria
-        main_building,low,short,snack,low,good,Yarche
-        main_building,medium,short,coffee,low,good,Bus_Stop_Coffee
-        main_building,high,medium,coffee,medium,good,Starbooks
-        second_building,low,very_short,snack,low,good,Vending_Machine
-        second_building,medium,short,coffee,medium,good,Second_Building_Cafe
-        second_building,medium,medium,full_meal,medium,good,Main_Cafeteria
-        second_building,low,short,snack,low,bad,Vending_Machine
-        campus_center,medium,short,pancakes,medium,good,Siberian_Pancakes
-    """.trimIndent()
+    val (samples, features) = parseCSV(DEFAULT_CSV)
+    val tree = buildTree(samples, features)
+
+    val answers = mapOf(
+        "location" to "main_building",
+        "budget" to "low",
+        "time_available" to "short",
+        "food_type" to "snack",
+        "queue_tolerance" to "low",
+        "weather" to "good"
+    )
+
+    val result = predict(tree, answers)
 }
 
