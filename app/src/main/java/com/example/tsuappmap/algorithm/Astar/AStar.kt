@@ -138,4 +138,54 @@ object AStar {
         path.reverse()
         return path
     }
+
+
+    data class PathResult(
+        val path: List<Pair<Int, Int>>,
+        val length: Double
+    )
+
+    fun findPathOnly(
+        startRow: Int, startCol: Int,
+        endRow: Int, endCol: Int
+    ): PathResult? {
+        val openSet = PriorityQueue<Node>(compareBy { it.f })
+
+        val gScore = Array(CampusGrid.rows) {
+            DoubleArray(CampusGrid.cols) { Double.MAX_VALUE }
+        }
+
+        val cameFrom = Array(CampusGrid.rows) {
+            arrayOfNulls<Pair<Int, Int>>(CampusGrid.cols)
+        }
+
+        gScore[startRow][startCol] = 0.0
+        openSet.add(Node(startRow, startCol, 0.0, heuristic(startRow, startCol, endRow, endCol)))
+
+        while (openSet.isNotEmpty()) {
+            val current = openSet.poll()!!
+
+            if (current.g > gScore[current.row][current.col]) continue
+
+            if (current.row == endRow && current.col == endCol) {
+                val path = reconstructPath(cameFrom, endRow, endCol)
+                return PathResult(path, gScore[endRow][endCol])
+            }
+
+            for ((nRow, nCol) in getNeighbours(current.row, current.col)) {
+                val stepCost = if (nRow != current.row && nCol != current.col) 1.414 else 1.0
+                val newG = gScore[current.row][current.col] + stepCost
+
+                if (newG < gScore[nRow][nCol]) {
+                    gScore[nRow][nCol] = newG
+                    cameFrom[nRow][nCol] = Pair(current.row, current.col)
+                    val h = heuristic(nRow, nCol, endRow, endCol)
+                    openSet.add(Node(nRow, nCol, newG, newG + h))
+                }
+            }
+        }
+
+        return null
+    }
+
 }

@@ -37,12 +37,16 @@ object MapRouteForAnt {
         Color.rgb(80, 200, 120),
     )
 
-    fun clearAntRoute(map: MapLibreMap)
-    {
+    fun clearAntRoute(map: MapLibreMap) {
         antRouteLines.forEach { map.removePolyline(it) }
         antRouteLines.clear()
         antMarkers.forEach { map.removeMarker(it) }
         antMarkers.clear()
+    }
+
+    fun clearStartMarker(map: MapLibreMap) {
+        antStartMarker?.let { map.removeMarker(it) }
+        antStartMarker = null
     }
 
     fun setStartMarker(context: Context, map: MapLibreMap, cell: Pair<Int, Int>) {
@@ -54,7 +58,7 @@ object MapRouteForAnt {
         )
     }
 
-    fun drawAntRoude(
+    fun drawAntRoute(
         context: Context,
         map: MapLibreMap,
         segments: List<List<Pair<Int, Int>>>,
@@ -66,9 +70,9 @@ object MapRouteForAnt {
             if (segment.isEmpty()) return@forEachIndexed
 
             val color = segmentColors[index % segmentColors.size]
-            val points = segment.map {(row,col) ->
-                val (lat,lon) = CampusGrid.cellToLatLon(row,col)
-                LatLng(lat,lon)
+            val points = segment.map { (row, col) ->
+                val (lat, lon) = CampusGrid.cellToLatLon(row, col)
+                LatLng(lat, lon)
             }
 
             val line = map.addPolyline(
@@ -78,13 +82,17 @@ object MapRouteForAnt {
             antRouteLines.add(line)
         }
 
-        cells.forEachIndexed {index, cell ->
-            val (lat,lon) = CampusGrid.cellToLatLon(cell.first,cell.second)
+        cells.forEachIndexed { index, cell ->
+            val (lat, lon) = CampusGrid.cellToLatLon(cell.first, cell.second)
             val label = if (index == 0) "ф " else "$index"
-            val bgColor = if (index == 0) Color.rgb(0,160,80) else segmentColors[(index - 1) % segmentColors.size]
-            val icon = makeNumberedIcon(context,label,bgColor)
+            val bgColor = if (index == 0) Color.rgb(
+                0,
+                160,
+                80
+            ) else segmentColors[(index - 1) % segmentColors.size]
+            val icon = makeNumberedIcon(context, label, bgColor)
             val marker = map.addMarker(
-                MarkerOptions().position(LatLng(lat,lon)).icon(icon)
+                MarkerOptions().position(LatLng(lat, lon)).icon(icon)
             )
 
             antMarkers.add(marker)
