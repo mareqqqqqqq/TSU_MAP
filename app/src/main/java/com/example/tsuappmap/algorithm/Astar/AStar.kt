@@ -87,8 +87,12 @@ object AStar {
             }
         }
 
-        steps.add(SearchStep(Pair(startRow, startCol), visited.toSet(), frontier.toSet(),
-            null))
+        steps.add(
+            SearchStep(
+                Pair(startRow, startCol), visited.toSet(), frontier.toSet(),
+                null
+            )
+        )
         return steps
     }
 
@@ -99,6 +103,7 @@ object AStar {
         val dc = (col - endCol).toDouble()
         return sqrt(dr * dr + dc * dc)
     }
+
     private fun getNeighbours(row: Int, col: Int): List<Pair<Int, Int>> {
         val result = mutableListOf<Pair<Int, Int>>()
         for (dr in -1..1) {
@@ -109,22 +114,25 @@ object AStar {
                 if (!CustomObstacle.isWalkable(nRow, nCol)) continue
                 if (dr != 0 && dc != 0) {
                     if (!CustomObstacle.isWalkable(nRow, col) || !CustomObstacle.isWalkable(
-                            row, nCol)) continue
+                            row, nCol
+                        )
+                    ) continue
                 }
                 result.add(Pair(nRow, nCol))
             }
         }
         return result
     }
+
     private fun reconstructPath(
         cameFrom: Array<Array<Pair<Int, Int>?>>,
         endRow: Int, endCol: Int
     ): List<Pair<Int, Int>> {
         val path = mutableListOf<Pair<Int, Int>>()
         var current: Pair<Int, Int>? = Pair(endRow, endCol)
-        while (current != null){
+        while (current != null) {
             path.add(current)
-            val(r, c) = current
+            val (r, c) = current
             current = cameFrom[r][c]
         }
         path.reverse()

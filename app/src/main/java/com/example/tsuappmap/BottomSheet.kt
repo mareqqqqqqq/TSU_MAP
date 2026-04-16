@@ -1,16 +1,24 @@
 package com.example.tsuappmap
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.tsuappmap.algorithm.AntColony.Attractions
 
 @Composable
 fun TabButton(label: String, onClick: () -> Unit, fontSize: Int) {
@@ -41,7 +49,11 @@ fun TabContent(selectedTab: Int,
                isObstacleMode: Boolean,
                onPlaceStart: () -> Unit,
                onPlaceEnd: () -> Unit,
-               onToggleObstacle: () -> Unit
+               onToggleObstacle: () -> Unit,
+               onPlaceAntStart: () -> Unit,
+               onRunAntColony: (Set<Int>) -> Unit,
+               antStartSet: Boolean,
+
 ) {
     Box(
         modifier = Modifier
@@ -111,9 +123,85 @@ fun TabContent(selectedTab: Int,
                 modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))
             ) { Text("Контент кнопки 3") }
 
-            4 -> Box(
-                modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))
-            ) { Text("Контент кнопки 4") }
+            4 ->{
+                val selectedIndices = remember { mutableStateListOf<Int>() }
+
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onPlaceAntStart,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (antStartSet)
+                                Color(red = 0, green = 150, blue = 80)
+                            else
+                                Color(red = 0, green = 114, blue = 188),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(if (antStartSet) "Старт установлен" else "Поставить точку (старт)")
+                    }
+
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        itemsIndexed(Attractions.allPoint) { index, poi ->
+                            val isSelected = index in selectedIndices
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp)
+                                    .background(
+                                        color = if (isSelected) Color(0xFF005EB8) else Color(0xFF2A2A2A),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) Color(0xFF64B5F6) else Color(0xFF555555),
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable {
+                                        if (isSelected) selectedIndices.remove(index)
+                                        else selectedIndices.add(index)
+                                    }
+                                    .padding(6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = poi.name,
+                                    fontSize = 10.sp,
+                                    color = Color.White,
+                                    textAlign = TextAlign.Center,
+                                    lineHeight = 12.sp,
+                                    maxLines = 3
+                                )
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = { onRunAntColony(selectedIndices.toSet()) },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(red = 180, green = 80, blue = 0),
+                            contentColor = Color.White
+                        ),
+                        enabled = antStartSet && selectedIndices.isNotEmpty()
+                    ) {
+                        Text("Построить маршрут обхода (${selectedIndices.size} точек)")
+                    }
+                }
+            }
+
 
             5 -> Box(
                 modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))

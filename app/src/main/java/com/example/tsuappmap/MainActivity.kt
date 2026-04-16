@@ -29,11 +29,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
+import com.example.tsuappmap.algorithm.AntColony.AntColony
+import com.example.tsuappmap.algorithm.AntColony.Attractions
+import com.example.tsuappmap.algorithm.AntColony.PointOfAttractions
 import com.example.tsuappmap.algorithm.Astar.AStar
 import com.example.tsuappmap.algorithm.Astar.CustomObstacle
 import com.example.tsuappmap.map.CampusGrid
 import com.example.tsuappmap.map.CampusMapView
 import com.example.tsuappmap.map.MapRoute
+import com.example.tsuappmap.map.MapRouteForAnt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,9 +59,10 @@ fun TsuMapScreen() {
     var startPoint by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var endPoint by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var barierStart by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-
     var selectedTab by remember {mutableStateOf(0)}
-
+    var placingAntStart by remember { mutableStateOf(false) }
+    var antStartPoint by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var antStartSet by remember { mutableStateOf(false) }
 
 
 
@@ -112,10 +117,29 @@ fun TsuMapScreen() {
                         placingStart = false
                         placingEnd = false
                         android.widget.Toast.makeText(
-                            context, if (isObstacleMode) "Режим барьера включёе" else "Режим барьера выключен",
+                            context,
+                            if (isObstacleMode) "Режим барьера включёе" else "Режим барьера выключен",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
-                    }
+                    },
+
+                    onPlaceAntStart = {
+                        placingAntStart = true; placingStart = false
+                        placingEnd = false; isObstacleMode = false
+                        android.widget.Toast.makeText(context, "Тапни на карте — стартовая точка", android.widget.Toast.LENGTH_SHORT).show()
+
+                    },
+
+                    onRunAntColony = { selectedIndices ->
+                        val start = antStartPoint
+                        if (start == null) {
+                            android.widget.Toast.makeText(context, "Сначала установи стартовую точку", android.widget.Toast.LENGTH_SHORT).show()
+                            return@TabContent
+                        }
+                        val selectedPois = selectedIndices.sorted().map { Attractions.allPoint[it] }
+                        mapRef?.let { map -> launchAntColony(map, context, start, selectedPois) }
+                    },
+                    antStartSet = antStartSet,
                 )
             }
         },
@@ -133,12 +157,26 @@ fun TsuMapScreen() {
             CampusMapView(
                 onMapReady = { map ->
                     val animationJob = arrayOf<Job?>(null)
+                    mapRef = map
 
                     map.addOnMapClickListener { latLng ->
                         val cell = CampusGrid.latLonToCell(latLng.latitude, latLng.longitude)
                             ?: return@addOnMapClickListener true
 
                         when {
+                            placingAntStart -> {
+                                val walkable = CampusGrid.nearestWalkable(cell.first, cell.second)
+                                if (walkable == null) {
+                                    android.widget.Toast.makeText(context, "Нет доступных точек рядом", android.widget.Toast.LENGTH_SHORT).show()
+                                } else {
+                                    antStartPoint = walkable
+                                    antStartSet = true
+                                    placingAntStart = false
+                                    MapRouteForAnt.setStartMarker(context, map, walkable)
+                                    android.widget.Toast.makeText(context, "Стартовая точка установлена", android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            }
+
                             isObstacleMode -> {
                                 if (barierStart == null) {
                                     barierStart = cell
@@ -250,3 +288,68 @@ fun launchAStar(
     }
 }
 
+fun launchAntColony(
+    map: MapLibreMap,
+    context: android.content.Context,
+    startCell: Pair<Int, Int>,
+    selectedPois: List<PointOfAttractions>
+) {
+    CoroutineScope(Dispatchers.Main).launch {
+        MapRouteForAnt.clearAntRoute(map)
+
+        val result = withContext(Dispatchers.Default) {
+            val cells = mutableListOf<Pair<Int, Int>>()
+            cells.add(startCell)
+
+            for (poi in selectedPois) {
+                val cell = CampusGrid.latLonToCell(poi.lat, poi.lon)
+                val walkable = if (cell != null) CampusGrid.nearestWalkable(cell.first, cell.second) else null
+                if (walkable != null) cells.add(walkable)
+            }
+
+            val n = cells.size
+            if (n < 2) return@withContext null
+
+            val distMatrix = Array(n) { DoubleArray(n) }
+            val paths = Array(n) { arrayOfNulls<List<Pair<Int, Int>>>(n) }
+
+            for (i in 0 until n) {
+                for (j in i + 1 until n) {
+                    val astarResult = AStar.functiomthatwouldbeadded(
+                        cells[i].first, cells[i].second,
+                        cells[j].first, cells[j].second
+                    )
+                    val length = astarResult?.length ?: (Double.MAX_VALUE / 2)
+                    val path = astarResult?.path ?: emptyList()
+                    distMatrix[i][j] = length
+                    distMatrix[j][i] = length
+                    paths[i][j] = path
+                    paths[j][i] = path.reversed()
+                }
+            }
+
+            val tourOrder = AntColony.solve(distMatrix)
+
+            val segments = mutableListOf<List<Pair<Int, Int>>>()
+            for (k in 0 until tourOrder.size - 1) {
+                val from = tourOrder[k]
+                val to = tourOrder[k + 1]
+                segments.add(paths[from][to] ?: emptyList())
+            }
+            val orderedCells = tourOrder.dropLast(1).map { cells[it] }
+
+            Triple(segments, orderedCells, cells.size)
+        }
+
+        if (result == null) {
+            android.widget.Toast.makeText(context, "Не удалось построить маршрут", android.widget.Toast.LENGTH_SHORT).show()
+            return@launch
+        }
+
+        val (segments, orderedCells, totalPoints) = result
+        MapRouteForAnt.drawAntRoude(context, map, segments, orderedCells)
+        android.widget.Toast.makeText(
+            context, "Маршрут построен! Точек: $totalPoints", android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+}

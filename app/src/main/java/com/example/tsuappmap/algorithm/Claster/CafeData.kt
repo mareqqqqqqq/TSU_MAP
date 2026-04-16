@@ -8,7 +8,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.Log
-import com.example.tsuappmap.algorithm.Claster.KMeansManhattan
 import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
 
