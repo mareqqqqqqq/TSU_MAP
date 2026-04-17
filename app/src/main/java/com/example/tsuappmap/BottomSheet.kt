@@ -78,7 +78,7 @@ fun TabContent(selectedTab: Int,
                         modifier = Modifier.width(360.dp).height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(red = 0, green = 0, blue = 188),
+                            containerColor = Color(red = 0, green = 114, blue = 188),
                             contentColor = Color.White
                         )
                     ) { Text("Стартовая точка")}
@@ -88,7 +88,7 @@ fun TabContent(selectedTab: Int,
                         modifier = Modifier.width(360.dp).height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(red = 0, green = 0, blue = 188),
+                            containerColor = Color(red = 0, green = 114, blue = 188),
                             contentColor = Color.White
                         )
                     ) { Text("Конечная точка")}
@@ -98,7 +98,7 @@ fun TabContent(selectedTab: Int,
                         modifier = Modifier.width(360.dp).height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(red = 0, green = 0, blue = 188),
+                            containerColor = Color(red = 0, green = 114, blue = 188),
                             contentColor = Color.White
                         )
                     ) { Text(if (isObstacleMode) "Барьеры: ВКЛ" else "Барьеры: ВЫКЛ")}
@@ -112,7 +112,7 @@ fun TabContent(selectedTab: Int,
                         modifier = Modifier.width(360.dp).height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(red = 0, green = 0, blue = 188),
+                            containerColor = Color(red = 0, green = 114, blue = 188),
                             contentColor = Color.White
                         )
                     ) { Text("K-means (Евклид братик)")}
@@ -122,7 +122,7 @@ fun TabContent(selectedTab: Int,
                         modifier = Modifier.width(360.dp).height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(red = 0, green = 0, blue = 188),
+                            containerColor = Color(red = 0, green = 114, blue = 188),
                             contentColor = Color.White
                         )
                     ) { Text("K-means (Манхэтанское)")}

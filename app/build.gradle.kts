@@ -73,5 +73,5 @@ dependencies {
 
     implementation("org.maplibre.gl:android-sdk:11.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

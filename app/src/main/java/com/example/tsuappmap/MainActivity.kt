@@ -27,9 +27,11 @@ import com.example.tsuappmap.map.CampusGrid
 import com.example.tsuappmap.map.CampusMapView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.tsuappmap.algorithm.NeuralNetwork.DigitDrawFullScreen
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         MapLibre.getInstance(this)
         CampusGrid.load(this)
@@ -60,7 +62,7 @@ fun TsuMapScreen(vm : MainViewModel = viewModel()) {
                 ) {
                     TabButton("Построить маршрут (А*)",{ vm.selectedTab = 1}, 12)
                     TabButton("Кластеризация", { vm.selectedTab = 2 }, 12)
-                    TabButton("Приобрести еду", { vm.selectedTab = 3 }, 12)
+                    TabButton("Оценить заведение (пока бета)", { vm.selectedTab = 3 }, 12)
                 }
 
                 Row(
