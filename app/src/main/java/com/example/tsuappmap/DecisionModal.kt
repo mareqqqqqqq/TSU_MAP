@@ -27,8 +27,7 @@ private val featureQuestions = mapOf(
     "location" to "Где ты находишься?",
     "budget" to "Какой у тебя бюджет",
     "time_available" to "Сколько у тебя времене",
-    "time_avaliable" to "Сколько у тебя времени?",
-    "food_type" to "Готов ли ты стоять в очереди",
+    "food_type" to "Что хотите?",
     "queue_tolerance" to "Котов ли ты стоять в очереди?",
     "weather" to "Какая сейчас погода?"
 )
@@ -163,12 +162,157 @@ fun DecisionTreeModal(onDismiss: () -> Unit) {
                     ) {
                         currentMode ->
                         when (currentMode) {
-
+                            0->QuizContent(tree = tree, samples = samples)
                         }
                     }
                 }
             }
+    }
+}
 
+@Composable
+fun QuizContent(tree: TreeNode, samples: List<Sample>) {
+    val answers = remember { mutableStateMapOf<String, String>() }
+    val history = remember { mutableStateListOf<String>() }
+
+    val currentNode = remember(answers.toMap()) {
+        var node: TreeNode = tree
+        for (feature in history) {
+            val ans = answers[feature] ?: break
+            if (node is TreeNode.Decision) {
+                node = node.branches[ans] ?: break
+            }
+        }
+        node
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        if (history.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White)
+                    .border(1.dp, TsuBlue.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("Мои ответы: ", color = TsuDark, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                Spacer(Modifier.height(2.dp))
+                history.forEach { feat ->
+                    val ans = answers[feat]
+                    if (ans != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(localFeature(feat), color = Color.Gray, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            Text(localValue(ans), color = TsuDark, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+            }
+        }
+
+        when (val node = currentNode) {
+            is TreeNode.Leaf -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(TsuSuccess.copy(alpha = 0.1f))
+                        .border(2.dp, TsuSuccess, RoundedCornerShape(16.dp))
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("✅", fontSize = 40.sp)
+                    Text("Рекомендуем:", color = TsuSuccess, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text(localPlace(node.label), color = TsuDark, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Button(
+                    onClick = { answers.clear(); history.clear() },
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = TsuBlue)
+                ) {
+                    Text("Начать заново", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            is TreeNode.Decision -> {
+                val feature = node.feature
+                val options = node.branches.keys.toList().sorted()
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .border(1.dp, TsuBlue.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(TsuLight),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("${history.size + 1}", color = TsuBlue, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(localFeature(feature), color = TsuDark, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        options.forEach { value ->
+                            Button(onClick = {
+                                answers[feature] = value
+                                history.add(feature)
+                            },
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = TsuLight,
+                                    contentColor = TsuDark
+                                )
+                            ) {
+                                Text(localValue(value), fontWeight = FontWeight.Medium, fontSize = 15.sp)
+                            }
+                        }
+                    }
+                }
+
+                 if (history.isNotEmpty()) {
+                     Spacer(Modifier.height(40.dp))
+                     OutlinedButton(
+                         onClick = {
+                             val last = history.removeLastOrNull()
+                             if (last != null) answers.remove(last)
+                         },
+                         modifier = Modifier.fillMaxWidth().height(46.dp),
+                         shape = RoundedCornerShape(12.dp),
+                         border = androidx.compose.foundation.BorderStroke(1.dp, TsuBlue)
+                     ) {
+                         Text("Назад", color = TsuBlue, fontWeight = FontWeight.Medium)
+                     }
+                 }
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
     }
 }
 

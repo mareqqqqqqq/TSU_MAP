@@ -74,6 +74,8 @@ fun TsuMapScreen() {
 
     var selectedTab by remember {mutableStateOf(0)}
 
+    var showDecisionTree by remember { mutableStateOf(false ) }
+
 
 
 
@@ -102,7 +104,10 @@ fun TsuMapScreen() {
                     horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
                 ) {
                     TabButton("Выбор и обход достоприм.", { selectedTab = 4 }, 12)
-                    TabButton("Кнопка 5", { selectedTab = 5 }, 12)
+                    TabButton("Кнопка 5", {
+                        selectedTab = 5
+                        showDecisionTree = true
+                                          }, 12)
                     TabButton("Кнопка 6", { selectedTab = 6 }, 12)
                 }
 
@@ -228,9 +233,13 @@ fun TsuMapScreen() {
             )
         }
     }
+
+    if (showDecisionTree) {
+        DecisionTreeModal(onDismiss = { showDecisionTree = false })
+    }
 }
 
-//lifecyclescope
+
 
 fun launchAStar(
     map: MapLibreMap,
