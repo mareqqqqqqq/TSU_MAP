@@ -502,6 +502,6 @@ private fun RouteResultScreen(
 private fun StatBadge(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, fontSize = 10.sp, color = Color(0xFF6B7280))
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color.Black)
     }
 }
