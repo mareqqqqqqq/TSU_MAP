@@ -1,188 +1,304 @@
 package com.example.tsuappmap.algorithm.Genetic
 
-import androidx.compose.material3.Card
-import com.example.tsuappmap.Cafe
-import com.example.tsuappmap.CafeData
-import java.util.Calendar
-import kotlin.math.*
 import kotlin.random.Random
 
-object GeneticAlgorithm {
-    private const val WALK_SPEED_M_PER_MIN = 83.3
+data class Route(
+    val establishments: List<FoodEstablishment>,
+    val fitness: Double,
+    val totalDistMeters: Double,
+    val totalTimeMin: Double,
+    val pathSegments: List<List<Pair<Int, Int>>>
+)
 
-    val cafeInfo: Map<String, CafeInfo> = mapOf(
-        "Старбукс" to CafeInfo(listOf("Кофе, Пиво"), 8, 20),
-        "Сибирские блины" to CafeInfo(listOf("Кофе, Булочки"), 8, 20),
-        "Ростикс" to CafeInfo(listOf("Кофе, Молоко"), 8, 20),
-        "Столовая тгу" to CafeInfo(listOf("Кофе"), 8, 20),
-        "кафе минутка" to CafeInfo(listOf("Кофе"), 8, 20),
-        "ресто место" to CafeInfo(listOf("Кофе"), 8, 20),
-        "сыр бор" to CafeInfo(listOf("Кофе"), 8, 20),
-        "батина шаурма" to CafeInfo(listOf("Кофе"), 8, 20),
-        "ярче" to CafeInfo(listOf("Кофе"), 8, 20),
-        "белка кофе" to CafeInfo(listOf("Кофе"), 8, 20),
-        "петрушка" to CafeInfo(listOf("Кофе"), 8, 20),
-        "NOVA" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Mindaйк кофе" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Harat's Pub" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Бристоль" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Подкова" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Шашлычный дом" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Пятерочка" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Экспресс" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Мини-Микс" to CafeInfo(listOf("Кофе"), 8, 20),
-        "Научка" to CafeInfo(listOf("Кофе"), 8, 20),
-    )
+class GeneticAlgorithm(
+    private val data: PrecomputedData,
+    private val requiredItems: Set<String>,
+    private val currentHour: Int,
+    private val currentMinute: Int,
+    val totalGenerations: Int = 250,
+    private val populationSize: Int = 120,
+    private val mutationRate: Double = 0.18,
+    private val eliteCount: Int = 12,
+    private val walkingSpeedKmH: Double = 5.0
+) {
+    var bestRoute: Route? = null
+        private set
 
-    data class CafeInfo(
-        val menu: List<String>,
-        val openHour: Int,
-        val closeHour: Int
-    )
+    var currentGeneration: Int = 0
+        private set
 
-    val cafeMenu: Map<String, List<String>> get() = cafeInfo.mapValues { it.value.menu}
-    val allMenuItems: List<String> = cafeInfo.values.flatMap{ it.menu }.distinct().sorted()
+    var onGenerationUpdate: ((Route, Int) -> Unit)? = null
 
-    data class Individual (
-        val route: List<Cafe>,
-        val fitness: Double
-    )
+    private val chromosomeLen = data.establishments.size
 
-    fun run(
-        userLat: Double,
-        userLon: Double,
-        selectedItems: List<String>,
-        generations: Int = 150,
-        popSize: Int = 40,
-        onGeneration: (gen: Int, best: Individual) -> Unit = {_, _ ->}
-    ): Individual {
+    private class Individual(val genes: IntArray, val route: Route?) {
+        val score: Double get() = route?.fitness ?: Double.POSITIVE_INFINITY
+    }
 
-        val needed = findNeededCafes(selectedItems)
+    fun run(): Route? {
 
-        if (needed.isEmpty()) {
-            return Individual(emptyList(), 0.0)
+        if (chromosomeLen == 0) return null
+
+        if (chromosomeLen == 1) {
+            val singleRoute = decode(IntArray(1) { 0 })
+            bestRoute = singleRoute
+            singleRoute?.let { onGenerationUpdate?.invoke(it, totalGenerations) }
+            return singleRoute
         }
 
-        if (needed.size == 1) {
-            val ind = Individual(needed, calcFitness(needed, userLat, userLon))
-            onGeneration(1, ind)
-            return ind
-        }
+        var population = spawnInitialPopulation()
+        if (population.all { it.route == null }) return null
 
-        var population = (0 until popSize).map {
-            makeIndividual(needed.shuffled(), userLat, userLon)
-        }
+        var champion = population.minByOrNull { it.score }!!
+        bestRoute = champion.route
+        champion.route?.let { onGenerationUpdate?.invoke(it, 0) }
 
-        var best = population.maxBy { it.fitness }
-        onGeneration(0, best)
+        var gen = 1
+        while (gen <= totalGenerations) {
+            currentGeneration = gen
 
-        repeat(generations) { gen ->
-            val next = mutableListOf(best)
-
-            while (next.size < popSize) {
-                val p1 = tournamentSelect(population)
-                val p2 = tournamentSelect(population)
-                var child = orderedCrossover(p1, p2, userLat, userLon)
-                if (Random.nextDouble() < 0.15) {
-                    child = swapMutate(child, userLat, userLon)
-                }
-                next.add(child)
+            population = nextGeneration(population)
+            val genLeader = population.minByOrNull { it.score }
+            if (genLeader != null && genLeader.score < champion.score) {
+                champion = genLeader
+                bestRoute = genLeader.route
             }
+            champion.route?.let { onGenerationUpdate?.invoke(it, gen) }
 
-            population = next
-            val genBest = population.maxBy { it.fitness }
-            if (genBest.fitness > best.fitness) best = genBest
-            onGeneration(gen + 1, best)
+            gen++
         }
-
-        return best
+        return bestRoute
     }
 
-    fun findNeededCafes(selectedItems: List<String>): List<Cafe> {
-        val remaining = selectedItems.toMutableList()
-        val result = mutableListOf<Cafe>()
-        val allCafes = CafeData.getAllCafes()
-        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-        while (remaining.isNotEmpty()) {
-            val best = allCafes.filter { cafe ->  val info = cafeInfo[cafe.name] ?: return@filter false
-                val isOpen = currentHour >= info.openHour && currentHour < info.closeHour
-                isOpen && info.menu.any { it in remaining }
+    private fun spawnInitialPopulation(): List<Individual> {
+        val pool = ArrayList<Individual>(populationSize)
+        repeat(populationSize) {
+            val g = IntArray(chromosomeLen) { it }
+            g.shuffle()
+            pool += Individual(g, decode(g))
+        }
+        return pool
+    }
+
+    private fun nextGeneration(current: List<Individual>): List<Individual> {
+        val ranked = current.sortedBy { it.score }
+
+        val next = ArrayList<Individual>(populationSize)
+
+        for (k in 0 until eliteCount.coerceAtMost(ranked.size)) {
+            next += ranked[k]
+        }
+
+        while (next.size < populationSize) {
+            val mom = selectByRank(ranked)
+            val dad = selectByRank(ranked)
+            var childGenes = crossoverPMX(mom.genes, dad.genes)
+            if (Random.nextDouble() < mutationRate) {
+                childGenes = mutate(childGenes)
             }
-        .maxByOrNull { cafe ->
-            val info = cafeInfo[cafe.name] ?: return@maxByOrNull 0
-            val count = info.menu.count{ it in remaining }
-            val closingSoon = (info.closeHour - currentHour) <= 2
-            if (closingSoon) count + 100 else count
-            } ?: break
-
-            val info = cafeInfo[best.name] ?: break
-            val  covered = info.menu.filter { it in remaining } ?: break
-            if (covered.isEmpty()) break
-            result.add(best)
-            remaining.removeAll(covered.toSet())
+            next += Individual(childGenes, decode(childGenes))
         }
-        return result
+        return next
     }
 
-    private fun calcFitness(route: List<Cafe>, uLat: Double, uLon: Double): Double {
-        if (route.isEmpty()) return 0.0
-        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        var totalMin = 0.0
-        var prevLat = uLat
-        var prevLon = uLon
 
-        for (cafe in route) {
-            totalMin += metersToMinutes (
-                euclideanMeters(prevLat, prevLon, cafe.location.latitude, cafe.location.longitude)
-            )
+    private fun decode(genes: IntArray): Route? {
+        val remaining = HashSet(requiredItems)
+        val visitedEst = ArrayList<Int>(requiredItems.size.coerceAtLeast(1))
 
-            val info = cafeInfo[cafe.name]
-            if (info != null) {
-                val minutesToClose = (info.closeHour - currentHour) * 60.0
-                if (minutesToClose in 0.0..60.0) {
-                    totalMin += (60.0 - minutesToClose) * 3
-                }
+        var k = 0
+        while (k < genes.size && remaining.isNotEmpty()) {
+            val estIdx = genes[k]
+            val est = data.establishments[estIdx]
+
+            var addedAny = false
+            for (mi in est.menu) {
+                if (remaining.remove(mi.name)) addedAny = true
             }
-            prevLat = cafe.location.latitude
-            prevLon = cafe.location.longitude
+            if (addedAny) visitedEst += estIdx
+            k++
         }
-        return if (totalMin > 0) 1.0 / totalMin else Double.MAX_VALUE
+
+        if (remaining.isNotEmpty()) return null
+        return composeRoute(visitedEst)
     }
 
-    fun metersToMinutes(m: Double): Double = m / WALK_SPEED_M_PER_MIN
+    private fun composeRoute(visitedEst: List<Int>): Route {
+        val nodeSeq = IntArray(visitedEst.size + 1).also { arr ->
+            arr[0] = 0
+            for (i in visitedEst.indices) arr[i + 1] = visitedEst[i] + 1
+        }
 
-    fun euclideanMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val dLat = (lat2 - lat1) * 111320.0
-        val dLon = (lon2 - lon1) * 111320.0 * cos(Math.toRadians(lat1))
-        return sqrt(dLat + dLat + dLon * dLon)
+        var travelledM = 0.0
+        var structuralPenalty = 0.0
+        val legs = ArrayList<List<Pair<Int, Int>>>(visitedEst.size)
+
+        for (i in 0 until nodeSeq.size - 1) {
+            val a = nodeSeq[i]
+            val b = nodeSeq[i + 1]
+            val raw = data.distMatrix[a][b]
+            if (raw >= UNREACHABLE_CUTOFF) {
+                travelledM += PROXY_UNREACHABLE_M
+                structuralPenalty += UNREACHABLE_PENALTY
+            } else {
+                travelledM += raw
+            }
+            legs += data.pathMatrix[a][b] ?: listOf(data.cells[a], data.cells[b])
+        }
+
+        val timingPenalty = timingPenaltyFor(visitedEst)
+        val travelMin = (travelledM / 1000.0 / walkingSpeedKmH) * 60.0
+        val totalTimeMin = travelMin + visitedEst.size * STOP_SERVICE_MIN
+
+        return Route(
+            establishments = visitedEst.map { data.establishments[it] },
+            fitness = travelledM + structuralPenalty + timingPenalty,
+            totalDistMeters = travelledM,
+            totalTimeMin = totalTimeMin,
+            pathSegments = legs
+        )
     }
 
-    private fun makeIndividual(route: List<Cafe>, uLat: Double, uLon: Double) =
-        Individual(route, calcFitness(route, uLat, uLon))
+    private fun timingPenaltyFor(visitedEst: List<Int>): Double {
+        var accM = 0.0
+        var prev = 0
+        var penalty = 0.0
+        for (estIdx in visitedEst) {
+            val node = estIdx + 1
+            val raw = data.distMatrix[prev][node]
+            accM += if (raw >= UNREACHABLE_CUTOFF) PROXY_UNREACHABLE_M else raw
 
-    private fun tournamentSelect(pop: List<Individual>): Individual = (0..2).map { pop.random() }.maxBy { it.fitness }
+            val travelMin = (accM / 1000.0 / walkingSpeedKmH) * 60.0
+            val clockAbs = currentHour * 60 + currentMinute + travelMin
+            val h = (clockAbs / 60.0).toInt()
+            val m = (clockAbs - h * 60).toInt()
 
-    private fun orderedCrossover(
-        p1: Individual, p2: Individual,
-        uLat: Double, uLon: Double
-    ): Individual {
-        val size = p1.route.size
-        if (size <= 1) return p1
-        val start = Random.nextInt(size)
-        val end = Random.nextInt(start, size)
-        val segment = p1.route.subList(start, end + 1)
-        val rest = p2.route.filter { it !in segment }
-        val child = (rest.take(start) + segment + rest.drop(start)).take(size)
-        return makeIndividual(child, uLat, uLon)
+            val slack = data.establishments[estIdx].minutesUntilClose(h, m)
+            penalty += when {
+                slack <= 0 -> CLOSED_ARRIVAL_PENALTY
+                slack <= 30 -> (30.0 - slack) * NEAR_CLOSE_COEF
+                else -> 0.0
+            }
+            prev = node
+        }
+        return penalty
     }
 
-    private fun swapMutate(ind: Individual, uLat: Double, uLon: Double): Individual {
-        if (ind.route.size <= 1) return ind
-        val r = ind.route.toMutableList()
-        val i = Random.nextInt(r.size)
-        val j = Random.nextInt(r.size)
-        val t = r[i]; r[i] = r[j]; r[j] = t
-        return makeIndividual(r, uLat, uLon)
+    private fun selectByRank(ranked: List<Individual>): Individual {
+        val n = ranked.size
+        val a = Random.nextInt(n)
+        val b = Random.nextInt(n)
+        val c = Random.nextInt(n)
+        return ranked[minOf(a, b, c)]
+    }
+
+
+    private fun crossoverPMX(p1: IntArray, p2: IntArray): IntArray {
+        val size = p1.size
+        if (size < 2) return p1.copyOf()
+
+        val x = Random.nextInt(size)
+        val y = Random.nextInt(size)
+        val lo = minOf(x, y)
+        val hi = maxOf(x, y)
+
+        val child = IntArray(size) { -1 }
+
+        val segValues = HashSet<Int>((hi - lo + 1) * 2)
+        for (k in lo..hi) {
+            child[k] = p1[k]
+            segValues += p1[k]
+        }
+
+        val posInP2 = IntArray(size)
+        for (k in 0 until size) posInP2[p2[k]] = k
+
+        for (k in lo..hi) {
+            val v = p2[k]
+            if (v in segValues) continue
+
+            var pos = k
+            while (pos in lo..hi) {
+                pos = posInP2[p1[pos]]
+            }
+            child[pos] = v
+        }
+
+        for (k in 0 until size) {
+            if (child[k] == -1) child[k] = p2[k]
+        }
+        return child
+    }
+
+
+    private fun mutate(genes: IntArray): IntArray = when (Random.nextInt(3)) {
+        0 -> scramble(genes)
+        1 -> displacement(genes)
+        else -> inversion(genes)
+    }
+
+    private fun scramble(genes: IntArray): IntArray {
+        val n = genes.size
+        if (n < 3) return genes.copyOf()
+        val a = Random.nextInt(n);
+        val b = Random.nextInt(n)
+        val lo = minOf(a, b);
+        val hi = maxOf(a, b)
+        val out = genes.copyOf()
+        for (i in hi downTo lo + 1) {
+            val j = lo + Random.nextInt(i - lo + 1)
+            val t = out[i]; out[i] = out[j]; out[j] = t
+        }
+        return out
+    }
+
+    private fun displacement(genes: IntArray): IntArray {
+        val n = genes.size
+        if (n < 3) return genes.copyOf()
+        val a = Random.nextInt(n);
+        val b = Random.nextInt(n)
+        val lo = minOf(a, b);
+        val hi = maxOf(a, b)
+        val block = IntArray(hi - lo + 1) { genes[lo + it] }
+        val rest = IntArray(n - block.size).also { arr ->
+            var w = 0
+            for (k in 0 until n) if (k !in lo..hi) {
+                arr[w++] = genes[k]
+            }
+        }
+        val insertAt = Random.nextInt(rest.size + 1)
+        val out = IntArray(n)
+        for (k in 0 until insertAt) out[k] = rest[k]
+        for (k in block.indices) out[insertAt + k] = block[k]
+        for (k in insertAt until rest.size) out[k + block.size] = rest[k]
+        return out
+    }
+
+    private fun inversion(genes: IntArray): IntArray {
+        val n = genes.size
+        if (n < 2) return genes.copyOf()
+        val a = Random.nextInt(n);
+        val b = Random.nextInt(n)
+        val lo = minOf(a, b);
+        val hi = maxOf(a, b)
+        val out = genes.copyOf()
+        var l = lo;
+        var r = hi
+        while (l < r) {
+            val t = out[l]; out[l] = out[r]; out[r] = t
+            l++; r--
+        }
+        return out
+    }
+
+
+    companion object {
+        private const val UNREACHABLE_CUTOFF = Double.MAX_VALUE / 2
+        private const val PROXY_UNREACHABLE_M = 500_000.0
+        private const val UNREACHABLE_PENALTY = 300_000.0
+        private const val CLOSED_ARRIVAL_PENALTY = 250_000.0
+        private const val NEAR_CLOSE_COEF = 600.0
+        private const val STOP_SERVICE_MIN = 3.0
     }
 }

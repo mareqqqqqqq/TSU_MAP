@@ -13,7 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.tsuappmap.algorithm.Genetic.GeneticScreen
+import com.example.tsuappmap.algorithm.Genetic.FoodRouteContent
+import com.example.tsuappmap.algorithm.Genetic.Route
+import org.maplibre.android.maps.MapLibreMap
+
 
 @Composable
 fun TabButton(label: String, onClick: () -> Unit, fontSize: Int) {
@@ -30,7 +33,8 @@ fun TabButton(label: String, onClick: () -> Unit, fontSize: Int) {
         contentPadding = PaddingValues(0.dp)
 
     ) {
-        Text(label,
+        Text(
+            label,
             maxLines = 2,
             textAlign = TextAlign.Center,
             lineHeight = 16.sp
@@ -40,15 +44,21 @@ fun TabButton(label: String, onClick: () -> Unit, fontSize: Int) {
 
 
 @Composable
-fun TabContent(selectedTab: Int,
-               isObstacleMode: Boolean,
-               onPlaceStart: () -> Unit,
-               onPlaceEnd: () -> Unit,
-               onToggleObstacle: () -> Unit,
-               onReset: () -> Unit,
-               onMyLocationStart: () -> Unit,
-               onMyLocationEnd: () -> Unit
-               ) {
+fun TabContent(
+    selectedTab: Int,
+    isObstacleMode: Boolean,
+    onPlaceStart: () -> Unit,
+    onPlaceEnd: () -> Unit,
+    onToggleObstacle: () -> Unit,
+    onReset: () -> Unit,
+    onMyLocationStart: () -> Unit,
+    onMyLocationEnd: () -> Unit,
+    mapRef: MapLibreMap? = null,
+    foodStartCell: Pair<Int, Int>? = null,
+    onRequestFoodStart: () -> Unit = {},
+    onFoodRouteBuilt: (Route?) -> Unit = {},
+    context: android.content.Context
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -62,7 +72,9 @@ fun TabContent(selectedTab: Int,
             ) {
                 Button(
                     onClick = onPlaceStart,
-                    modifier = Modifier.width(360.dp).height(70.dp),
+                    modifier = Modifier
+                        .width(360.dp)
+                        .height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -72,7 +84,9 @@ fun TabContent(selectedTab: Int,
 
                 Button(
                     onClick = onPlaceEnd,
-                    modifier = Modifier.width(360.dp).height(70.dp),
+                    modifier = Modifier
+                        .width(360.dp)
+                        .height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -82,7 +96,9 @@ fun TabContent(selectedTab: Int,
 
                 Button(
                     onClick = onToggleObstacle,
-                    modifier = Modifier.width(360.dp).height(70.dp),
+                    modifier = Modifier
+                        .width(360.dp)
+                        .height(70.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 0, green = 0, blue = 188),
@@ -91,32 +107,47 @@ fun TabContent(selectedTab: Int,
                 ) { Text(if (isObstacleMode) "Барьеры: ВКЛ" else "Барьеры: ВЫКЛ") }
 
                 Button(
-                    onClick = onReset, modifier = Modifier.width(360.dp).height(70.dp),
+                    onClick = onReset, modifier = Modifier
+                        .width(360.dp)
+                        .height(70.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor =
-                        Color(red = 0, green = 0, blue = 188), contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =
+                            Color(red = 0, green = 0, blue = 188), contentColor = Color.White
+                    )
                 ) { Text("Сбросить всё") }
 
                 Button(
-                    onClick = onMyLocationStart, modifier = Modifier.width(360.dp).height(70.dp),
+                    onClick = onMyLocationStart, modifier = Modifier
+                        .width(360.dp)
+                        .height(70.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor =
-                        Color(red = 0, green = 0, blue = 188), contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =
+                            Color(red = 0, green = 0, blue = 188), contentColor = Color.White
+                    )
                 ) { Text("Моё местоположение - Старт") }
 
                 Button(
-                    onClick = onMyLocationEnd, modifier = Modifier.width(360.dp).height(70.dp),
+                    onClick = onMyLocationEnd, modifier = Modifier
+                        .width(360.dp)
+                        .height(70.dp),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor =
-                        Color(red = 0, green = 0, blue = 188), contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =
+                            Color(red = 0, green = 0, blue = 188), contentColor = Color.White
+                    )
                 ) { Text("Моё местоположение - Конец") }
             }
+
             2 -> Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
             ) {
                 Button(
                     onClick = {},
-                    modifier = Modifier.width(360.dp).height(65.dp),
+                    modifier = Modifier
+                        .width(360.dp)
+                        .height(65.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 186, green = 184, blue = 97),
@@ -126,7 +157,9 @@ fun TabContent(selectedTab: Int,
 
                 Button(
                     onClick = {},
-                    modifier = Modifier.width(360.dp).height(65.dp),
+                    modifier = Modifier
+                        .width(360.dp)
+                        .height(65.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(red = 186, green = 97, blue = 97),
@@ -135,18 +168,30 @@ fun TabContent(selectedTab: Int,
                 ) { Text("Поставить или поменять конечную точку") }
             }
 
-            3 -> GeneticScreen()
+            3 -> FoodRouteContent(
+                mapRef = mapRef,
+                startCell = foodStartCell,
+                onRequestPlaceStart = onRequestFoodStart,
+                onRouteBuilt = onFoodRouteBuilt,
+                context = context
+            )
 
             4 -> Box(
-                modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(red = 100, green = 100, blue = 100))
             ) { Text("Контент кнопки 4") }
 
             5 -> Box(
-                modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(red = 100, green = 100, blue = 100))
             ) { Text("Контент кнопки 5") }
 
             6 -> Box(
-                modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(red = 100, green = 100, blue = 100))
             ) { Text("Контент кнопки 6") }
         }
     }

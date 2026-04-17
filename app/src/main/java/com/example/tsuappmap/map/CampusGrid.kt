@@ -22,16 +22,18 @@ object CampusGrid {
         val uniqueX = sortedSetOf<Double>()
         val uniqueY = sortedSetOf<Double>()
 
-        context.assets.open("pasik.csv").bufferedReader().use { reader -> reader.forEachLine { line ->
-            val parts = line.trim().split(",")
-            if (parts.size < 3) return@forEachLine
-            val x = parts[0].toDoubleOrNull() ?: return@forEachLine
-            val y = parts[1].toDoubleOrNull() ?: return@forEachLine
-            val w = parts[2].trim().toIntOrNull() ?: return@forEachLine
-            points.add(Triple(x, y, w))
-            uniqueX.add(x)
-            uniqueY.add(y)
-        } }
+        context.assets.open("pasik.csv").bufferedReader().use { reader ->
+            reader.forEachLine { line ->
+                val parts = line.trim().split(",")
+                if (parts.size < 3) return@forEachLine
+                val x = parts[0].toDoubleOrNull() ?: return@forEachLine
+                val y = parts[1].toDoubleOrNull() ?: return@forEachLine
+                val w = parts[2].trim().toIntOrNull() ?: return@forEachLine
+                points.add(Triple(x, y, w))
+                uniqueX.add(x)
+                uniqueY.add(y)
+            }
+        }
 
         val xToCol = uniqueX.withIndex().associate { (i, x) -> x to i }
         val yToRow = uniqueY.withIndex().associate { (i, y) -> y to i }
