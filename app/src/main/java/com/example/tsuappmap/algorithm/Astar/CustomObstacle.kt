@@ -6,13 +6,12 @@ object CustomObstacle {
 
     private val obstacle = mutableSetOf<Pair<Int, Int>>()
 
-    fun toggle(row: Int, col: Int): Boolean{
+    fun toggle(row: Int, col: Int): Boolean {
         val cell = Pair(row, col)
         return if (obstacle.contains(cell)) {
             obstacle.remove(cell)
             false
-        }
-        else {
+        } else {
             obstacle.add(cell)
             true
         }
@@ -20,7 +19,8 @@ object CustomObstacle {
 
     fun isBlocked(row: Int, col: Int): Boolean = obstacle.contains(Pair(row, col))
 
-    fun isWalkable(row: Int, col: Int): Boolean = CampusGrid.isWalkable(row, col) && !isBlocked(row, col)
+    fun isWalkable(row: Int, col: Int): Boolean =
+        CampusGrid.isWalkable(row, col) && !isBlocked(row, col)
 
     fun clear() = obstacle.clear()
 
@@ -40,8 +40,12 @@ object CustomObstacle {
             obstacle.add(Pair(r, c))
             if (r == row2 && c == col2) break
             val e2 = 2 * err
-            if (e2 > -dc) { err -= dc; r += sr }
-            if (e2 < dr) { err += dr; c += sc }
+            if (e2 > -dc) {
+                err -= dc; r += sr
+            }
+            if (e2 < dr) {
+                err += dr; c += sc
+            }
         }
     }
 }

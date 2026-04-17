@@ -1,20 +1,20 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Claster
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.annotations.MarkerOptions
 import android.graphics.Color
-import org.maplibre.android.annotations.PolygonOptions
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.util.Log
+import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
 
 
 data class Cafe(
     val name: String,
-    val location: LatLng,
-    val isUserAdded: Boolean = false
+    val location: LatLng
 )
 
 
@@ -83,7 +83,7 @@ object CafeData {
                     .setSnippet("Заведение общепита")
             )
         }
-        android.util.Log.d("CafeData","Отображено ${defaultCafes.size} кафе")
+        Log.d("CafeData","Отображено ${defaultCafes.size} кафе")
     }
 
     private val CLUSTERS_COLORS = listOf(
@@ -138,7 +138,7 @@ object CafeData {
         }
     }
 
-    private fun createColoredIcon(context: Context, color: Int): org.maplibre.android.annotations.Icon {
+    private fun createColoredIcon(context: Context, color: Int): Icon {
         val size = 64
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
