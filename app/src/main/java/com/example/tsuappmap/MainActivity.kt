@@ -26,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import com.example.tsuappmap.map.CampusGrid
 import com.example.tsuappmap.map.CampusMapView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.tsuappmap.algorithm.NeuralNetwork.DigitDrawFullScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +42,10 @@ class MainActivity : ComponentActivity() {
 fun TsuMapScreen(vm : MainViewModel = viewModel()) {
     val context = LocalContext.current
 
+    if (vm.showDigitScreen) {
+        DigitDrawFullScreen(onClose = { vm.showDigitScreen = false })
+        return
+    }
     BottomSheetScaffold(
         sheetContent = {
             Column(
@@ -81,6 +86,7 @@ fun TsuMapScreen(vm : MainViewModel = viewModel()) {
                     onRunAntColony = {indices -> vm.runAntColony(indices, context)},
                     antStartSet = vm.antStartSet,
                     onClearMap = {vm. clearMap()},
+                    onOpenDigitScreen = { vm.showDigitScreen = true },
                     clearCounter = vm.clearCounter
                 )
             }

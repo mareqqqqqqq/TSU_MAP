@@ -49,6 +49,8 @@ class MainViewModel : ViewModel() {
     var antStartSet by mutableStateOf(false)
     var clearCounter by mutableStateOf(0)
 
+    var showDigitScreen by mutableStateOf(false)
+
     fun clearMap() {
         val map = mapRef ?: return
 
@@ -194,7 +196,7 @@ class MainViewModel : ViewModel() {
     private fun handleEndClick(cell: Pair<Int, Int>, map: MapLibreMap, context: Context) {
         val walkable = CampusGrid.nearestWalkable(cell.first, cell.second)
         if (walkable == null) {
-            Toast.makeText(context, "Нет доступных точек рядом", android.widget.Toast.LENGTH_SHORT)
+            Toast.makeText(context, "Нет доступных точек рядом", Toast.LENGTH_SHORT)
                 .show()
             return
         }

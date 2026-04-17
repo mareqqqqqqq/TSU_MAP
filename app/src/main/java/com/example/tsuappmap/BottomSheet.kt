@@ -60,6 +60,7 @@ fun TabContent(selectedTab: Int,
                clearCounter: Int = 0,
                onShowManhattan: () -> Unit,
                onShowEuclidian: () -> Unit,
+               onOpenDigitScreen: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -127,8 +128,19 @@ fun TabContent(selectedTab: Int,
                     ) { Text("K-means (Манхэтанское)")}
                 }
 
-                3 -> Box(modifier = Modifier.fillMaxSize().background(Color(red = 100, green = 100, blue = 100))
-                ) {Text("Контент кнопки 3")}
+                3 -> Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
+                ) {
+                    Button(
+                        onClick = onOpenDigitScreen,
+                        modifier = Modifier.width(360.dp).height(70.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(red = 0, green = 114, blue = 188),
+                            contentColor = Color.White
+                        )
+                    ) { Text("Открыть распознавание цифры") }
+                }
 
                 4 -> {
                     val selectedIndices = remember {mutableStateListOf<Int>()}
