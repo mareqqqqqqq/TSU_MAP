@@ -17,8 +17,7 @@ import org.maplibre.android.annotations.PolylineOptions
 fun CampusMapView(
     onMapReady: (MapLibreMap) -> Unit,
     modifier: Modifier = Modifier
-)
-{
+) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
 
@@ -39,8 +38,10 @@ fun CampusMapView(
 
                         val latMin = centerTsu.latitude - ((baseRadius + southExtra) / 111320.0)
                         val latMax = centerTsu.latitude + ((baseRadius + northExtra) / 111320.0)
-                        val lngMin = centerTsu.longitude - ((baseRadius + westExtra) / (111320.0 * cosLat))
-                        val lngMax = centerTsu.longitude + ((baseRadius + eastExtra) / (111320.0 * cosLat))
+                        val lngMin =
+                            centerTsu.longitude - ((baseRadius + westExtra) / (111320.0 * cosLat))
+                        val lngMax =
+                            centerTsu.longitude + ((baseRadius + eastExtra) / (111320.0 * cosLat))
 
                         val tsuBounds = LatLngBounds.Builder()
                             .include(LatLng(latMin, lngMin))
@@ -70,8 +71,14 @@ fun CampusMapView(
 }
 
 
-fun drawFinalGrid(map: MapLibreMap, latMin: Double, latMax: Double, lngMin: Double, lngMax: Double, centerLat: Double)
-{
+fun drawFinalGrid(
+    map: MapLibreMap,
+    latMin: Double,
+    latMax: Double,
+    lngMin: Double,
+    lngMax: Double,
+    centerLat: Double
+) {
     val stepMeters = 8.0
     val latStep = stepMeters / 111320.0
     val lngStep = stepMeters / (111320.0 * Math.cos(Math.toRadians(centerLat)))

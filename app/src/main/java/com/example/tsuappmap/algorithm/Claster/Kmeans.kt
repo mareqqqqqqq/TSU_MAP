@@ -13,7 +13,7 @@ class Kmeans {
             return cafes.map { it.location }
         }
 
-        val centers = mutableListOf<LatLng>()
+        val centers = mutableListOf<LatLng>() // список центроид
 
         val firstCenter = cafes.random().location;
         centers.add(firstCenter)
@@ -35,13 +35,14 @@ class Kmeans {
                 break
             }
 
-            // рандомное число до totalDist(диапазон)
+            // вероятностный метод, штука из k-means++
+            // рандомное число от 0 до 1 умножен на тотал дсит
             val random = Math.random() * totalDistance
 
             // сумма квадратов расстояний, копим
             var cumulative = 0.0
-
             var selectedIndex = 0
+
             for (i in distances.indices) {
                 cumulative += distances[i]
                 if (cumulative >= random) {
@@ -90,6 +91,7 @@ class Kmeans {
     fun centersChanged(previous: List<LatLng>, current: List<LatLng>): Boolean {
         if (previous.size != current.size) return true;
 
+        // группирует по парам типо старое новое
         return previous.zip(current).any { (prev, curr) ->
             euclideanDistance(prev, curr) > 1.0
         }
@@ -105,7 +107,6 @@ class Kmeans {
         }
 
         var centers = initCenters(cafes, k)
-
         var assignments = assignToClusters(cafes, centers)
         var previousCenters: List<LatLng>
 

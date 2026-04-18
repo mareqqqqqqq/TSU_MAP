@@ -1,17 +1,14 @@
 package com.example.tsuappmap
+
 import kotlin.math.log2
 
-
-
 data class Sample(
-    val features: Map<String, String>,
-    val label: String
+    val features: Map<String, String>, val label: String
 )
 
 sealed class TreeNode {
     data class Decision(
-        val feature: String,
-        val branches: Map<String, TreeNode>
+        val feature: String, val branches: Map<String, TreeNode>
     ) : TreeNode()
 
     data class Leaf(
@@ -19,7 +16,7 @@ sealed class TreeNode {
     ) : TreeNode()
 }
 
-fun parseCSV(csv: String) : Pair<List<Sample>, List<String>> {
+fun parseCSV(csv: String): Pair<List<Sample>, List<String>> {
     val lines = csv.trim().lines().filter { it.isNotBlank() }
     require(lines.size >= 2) { "CSV должен содежать заголовок и хотя бы одну строку" }
 
@@ -43,7 +40,7 @@ fun parseCSV(csv: String) : Pair<List<Sample>, List<String>> {
 fun predict(tree: TreeNode, ans: Map<String, String>): String {
     var node: TreeNode = tree
     while (node is TreeNode.Decision) {
-        var answer = ans[node.feature] ?:return "Нет даных"
+        var answer = ans[node.feature] ?: return "Нет даных"
         node = node.branches[answer] ?: return "Нет данных"
     }
 
@@ -51,45 +48,40 @@ fun predict(tree: TreeNode, ans: Map<String, String>): String {
 }
 
 fun getFeatureValues(samples: List<Sample>, feature: String): List<String> =
-    samples.mapNotNull {it.features[feature] }.distinct().sorted()
-
+    samples.mapNotNull { it.features[feature] }.distinct().sorted()
 
 fun entropy(samples: List<Sample>): Double {
     if (samples.isEmpty()) return 0.0
     val total = samples.size.toDouble()
 
-    return samples
-        .groupBy { it.label }
-        .values
-        .sumOf {
-            group ->
-            val p = group.size / total
-            -p * log2(p)
-        }
+    return samples.groupBy { it.label }.values.sumOf { group ->
+        val p = group.size / total // типо размер группы по признаку поделит ьт на всго
+        -p * log2(p)
+    }
 }
 
-fun informationGain(samples: List<Sample>, feature: String) : Double {
+
+// короче формула прироста информаци это энтропия до разделения - средняя энтропия после разделения
+fun informationGain(samples: List<Sample>, feature: String): Double {
     val total = samples.size.toDouble()
     val parentEntropy = entropy(samples)
 
-    val weightedChildEntropy = samples
-        .groupBy { it.features[feature] ?: "?" }
-        .values
-        .sumOf { subset -> (subset.size / total) * entropy(subset) }
+    val weightedChildEntropy = samples.groupBy {
+        it.features[feature] ?: "?"
+    }.values.sumOf { subset -> (subset.size / total) * entropy(subset) }
 
 
     return parentEntropy - weightedChildEntropy
 }
 
+private fun majorityLabel(samples: List<Sample>): String =
+    samples.groupBy { it.label } // сгруппирует по ответам в csv
+        .maxByOrNull { it.value.size }!!.key // сделает ключ например ярче
 
-private fun majorityLabel(samples: List<Sample>) : String =
-    samples.groupBy { it.label }
-        .maxByOrNull { it.value.size }!!
-        .key
-
-fun buildTree(samples: List<Sample>, features: List<String>) : TreeNode {
-    val uniqueLabels = samples.map { it.label }.distinct()
-    if (uniqueLabels.size == 1) {
+fun buildTree(samples: List<Sample>, features: List<String>): TreeNode {
+    val uniqueLabels =
+        samples.map { it.label }.distinct() // оставит толкьо уникальные yarche и ещё чёта
+    if (uniqueLabels.size == 1) { // сразу лист, если типо у нас всего 1 ответ есть
         return TreeNode.Leaf(uniqueLabels[0])
     }
 
@@ -98,18 +90,18 @@ fun buildTree(samples: List<Sample>, features: List<String>) : TreeNode {
     }
 
     val bestFeature = features.maxByOrNull {
-        informationGain(samples, it)
-    } !!
+        informationGain(samples, it) // пророст информации
+    }!!
 
     if (informationGain(samples, bestFeature) <= 0.0) {
         return TreeNode.Leaf(majorityLabel(samples))
     }
 
-    val remainingFeatures= features - bestFeature
+    val remainingFeatures = features - bestFeature
 
-    val branches = samples
-        .groupBy { it.features[bestFeature] ?: "?"}
-        .mapValues { (_, subset) -> buildTree(subset, remainingFeatures)}
+    val branches = samples.groupBy { it.features[bestFeature] ?: "?" }
+        // тут subset это примеры которые в сргупирвоанном и рекурсивны вызывает
+        .mapValues { (_, subset) -> buildTree(subset, remainingFeatures) }
 
     return TreeNode.Decision(bestFeature, branches)
 }

@@ -13,6 +13,8 @@ import com.example.tsuappmap.algorithm.AntColony.PointOfAttractions
 import com.example.tsuappmap.algorithm.Astar.AStar
 import com.example.tsuappmap.algorithm.Astar.CustomObstacle
 import com.example.tsuappmap.algorithm.Claster.CafeData
+import com.example.tsuappmap.algorithm.Claster.ClusterDisplay
+import com.example.tsuappmap.algorithm.Claster.KMeansAstar
 import com.example.tsuappmap.algorithm.Claster.KMeansManhattan
 import com.example.tsuappmap.algorithm.Claster.Kmeans
 import com.example.tsuappmap.map.CampusGrid
@@ -23,6 +25,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.maplibre.android.annotations.Marker
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 
@@ -36,9 +39,7 @@ class MainViewModel : ViewModel() {
     var placingEnd by mutableStateOf(false)
 
     var startPoint by mutableStateOf<Pair<Int, Int>?>(null)
-
     var endPoint by mutableStateOf<Pair<Int, Int>?>(null)
-
     var barierStart by mutableStateOf<Pair<Int, Int>?>(null)
 
     private var animationJob: Job? = null
@@ -50,6 +51,14 @@ class MainViewModel : ViewModel() {
     var clearCounter by mutableStateOf(0)
 
     var showDecisionTree by mutableStateOf(false)
+
+    var activeLegendK by mutableStateOf(0)
+    var activeLegendMethod by mutableStateOf("")
+
+    var isAstarClustering by mutableStateOf(false)
+    var astarProgress by mutableStateOf(0f)
+
+    private var clusterMarkers = mutableListOf<Marker>()
 
     fun clearMap() {
         val map = mapRef ?: return
@@ -66,6 +75,11 @@ class MainViewModel : ViewModel() {
         CustomObstacle.clear()
         MapRoute.drawObstacles(map)
 
+        clusterMarkers.forEach { map.removeMarker(it) }
+        clusterMarkers.clear()
+        activeLegendK = 0
+        activeLegendMethod = ""
+
         startPoint = null
         endPoint = null
         barierStart = null
@@ -78,7 +92,6 @@ class MainViewModel : ViewModel() {
 
         clearCounter++
     }
-
 
     fun onPlaceStartClicked(context: Context) {
         isObstacleMode = false
@@ -96,7 +109,6 @@ class MainViewModel : ViewModel() {
         Toast.makeText(context, "Выбери конечную точку", Toast.LENGTH_SHORT).show()
     }
 
-
     fun onToggleObstacle(context: Context) {
         isObstacleMode = !isObstacleMode
         barierStart = null
@@ -104,7 +116,6 @@ class MainViewModel : ViewModel() {
         placingEnd = false
         placingAntStart = false
         val msg = if (isObstacleMode) "Режим барьера включен" else "Режим барьера выключен"
-
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
     }
 
@@ -117,10 +128,7 @@ class MainViewModel : ViewModel() {
     }
 
     private fun startAStar(
-        map: MapLibreMap,
-        context: Context,
-        start: Pair<Int, Int>,
-        end: Pair<Int, Int>
+        map: MapLibreMap, context: Context, start: Pair<Int, Int>, end: Pair<Int, Int>
     ) {
         animationJob?.cancel()
         MapRoute.clearSearch(map)
@@ -130,7 +138,6 @@ class MainViewModel : ViewModel() {
             val steps = withContext(Dispatchers.Default) {
                 AStar.findPathWithSteps(start.first, start.second, end.first, end.second)
             }
-
             for (step in steps) {
                 if (step.visited != null && step.frontier != null) {
                     MapRoute.drawSearchStep(map, step.visited, step.frontier, step.current)
@@ -142,13 +149,10 @@ class MainViewModel : ViewModel() {
             if (lastStep.path != null) {
                 MapRoute.drawRoute(map, lastStep.path)
             } else {
-                Toast.makeText(
-                    context, "Маршрут не найден", android.widget.Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(context, "Маршрут не найден", Toast.LENGTH_SHORT).show()
             }
         }
     }
-
 
     private fun handleAntStartClick(cell: Pair<Int, Int>, map: MapLibreMap, context: Context) {
         val walkeble = CampusGrid.nearestWalkable(cell.first, cell.second)
@@ -156,13 +160,11 @@ class MainViewModel : ViewModel() {
             Toast.makeText(context, "Нет доступных точек рядом", Toast.LENGTH_SHORT).show()
             return
         }
-
         antStartPoint = walkeble
         antStartSet = true
         placingAntStart = false
         MapRouteForAnt.setStartMarker(context, map, walkeble)
     }
-
 
     private fun handleObstacleClick(cell: Pair<Int, Int>, map: MapLibreMap, context: Context) {
         if (barierStart == null) {
@@ -180,75 +182,121 @@ class MainViewModel : ViewModel() {
     private fun handleStartClick(cell: Pair<Int, Int>, map: MapLibreMap, context: Context) {
         val walkable = CampusGrid.nearestWalkable(cell.first, cell.second)
         if (walkable == null) {
-            Toast.makeText(context, "Нет доступных точек рядом", Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(context, "Нет доступных точек рядом", Toast.LENGTH_SHORT).show()
             return
         }
-
         startPoint = walkable
         placingStart = false
         MapRoute.setStartMarker(map, walkable)
         Toast.makeText(context, "Старт установлен", Toast.LENGTH_SHORT).show()
-
         endPoint?.let { end -> startAStar(map, context, walkable, end) }
     }
 
     private fun handleEndClick(cell: Pair<Int, Int>, map: MapLibreMap, context: Context) {
         val walkable = CampusGrid.nearestWalkable(cell.first, cell.second)
         if (walkable == null) {
-            Toast.makeText(context, "Нет доступных точек рядом", android.widget.Toast.LENGTH_SHORT)
-                .show()
+            Toast.makeText(context, "Нет доступных точек рядом", Toast.LENGTH_SHORT).show()
             return
         }
-
-        endPoint  = walkable
+        endPoint = walkable
         placingEnd = false
         MapRoute.setEndMarker(map, walkable)
         Toast.makeText(context, "Конечная точка установлена", Toast.LENGTH_SHORT).show()
-
         startPoint?.let { start -> startAStar(map, context, start, walkable) }
     }
 
     fun onMapClick(latLng: LatLng, map: MapLibreMap, context: Context): Boolean {
         val cell = CampusGrid.latLonToCell(latLng.latitude, latLng.longitude) ?: return true
-
         when {
             placingAntStart -> handleAntStartClick(cell, map, context)
             isObstacleMode -> handleObstacleClick(cell, map, context)
             placingStart -> handleStartClick(cell, map, context)
             placingEnd -> handleEndClick(cell, map, context)
         }
-
         return true
     }
 
-    fun showEuclideanClusters(context: Context) {
-        val map = mapRef ?: return
-        val cafes = CafeData.getAllCafes()
-        val result = Kmeans().cluster(cafes, k = 3)
-        MapRoute.drawClusters(map, result, context)
-        Toast.makeText(
-            context,
-            "K-means (Евклид братанчик)",
-            Toast.LENGTH_SHORT
-        ).show()
+    private fun clearClusterMarkers(map: MapLibreMap) {
+        clusterMarkers.forEach { map.removeMarker(it) }
+        clusterMarkers.clear()
+        MapRoute.clearClusters(map)
     }
 
-    fun showManhattanClusters(context: Context) {
+    fun showEuclideanClusters(context: Context, k: Int = 3) {
         val map = mapRef ?: return
+        clearClusterMarkers(map)
+
         val cafes = CafeData.getAllCafes()
-        val result = KMeansManhattan().cluster(cafes, k = 3)
-        MapRoute.drawClusters(map, result, context)
-        Toast.makeText(
-            context,
-            "K-means (Манхэттен братанчик)",
-            Toast.LENGTH_SHORT
-        ).show()
+        val result = Kmeans().cluster(cafes, k = k)
+
+        val markers = ClusterDisplay.drawClusters(
+            map, result, context, method = ClusterDisplay.METHOD_EUCLIDEAN, k = k
+        )
+        clusterMarkers.addAll(markers)
+
+
+        activeLegendK = k
+        activeLegendMethod = ClusterDisplay.METHOD_EUCLIDEAN
+
+        Toast.makeText(context, "Евклид, кластеров: $k", Toast.LENGTH_SHORT).show()
+    }
+
+    fun showManhattanClusters(context: Context, k: Int = 3) {
+        val map = mapRef ?: return
+        clearClusterMarkers(map)
+
+        val cafes = CafeData.getAllCafes()
+        val result = KMeansManhattan().cluster(cafes, k = k)
+
+        val markers = ClusterDisplay.drawClusters(
+            map, result, context, method = ClusterDisplay.METHOD_MANHATTAN, k = k
+        )
+        clusterMarkers.addAll(markers)
+
+        activeLegendK = k
+        activeLegendMethod = ClusterDisplay.METHOD_MANHATTAN
+
+        Toast.makeText(context, "Манхэттен, кластеров: $k", Toast.LENGTH_SHORT).show()
+    }
+
+    fun showAstarClusters(context: Context, k: Int = 3) {
+        val map = mapRef ?: return
+
+        if (isAstarClustering) {
+            Toast.makeText(context, "Уже считается...", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        isAstarClustering = true
+        astarProgress = 0f
+        clearClusterMarkers(map)
+
+        viewModelScope.launch {
+            Toast.makeText(context, "Считаем пешеходные расстояния...", Toast.LENGTH_LONG).show()
+
+            val cafes = CafeData.getAllCafes()
+            val result = withContext(Dispatchers.Default) {
+                KMeansAstar().cluster(cafes, k) { progress ->
+                    astarProgress = progress
+                }
+            }
+
+            val markers = ClusterDisplay.drawClusters(
+                map, result, context, method = ClusterDisplay.METHOD_ASTAR, k = k
+            )
+            clusterMarkers.addAll(markers)
+
+            activeLegendK = k
+            activeLegendMethod = ClusterDisplay.METHOD_ASTAR
+            isAstarClustering = false
+            astarProgress = 0f
+
+            Toast.makeText(context, "A* кластеры готовы, k=$k", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun buildAntColonyRoute(
-        startCell: Pair<Int, Int>,
-        selectedPois: List<PointOfAttractions>
+        startCell: Pair<Int, Int>, selectedPois: List<PointOfAttractions>
     ): Triple<List<List<Pair<Int, Int>>>, List<Pair<Int, Int>>, Int>? {
         val cells = mutableListOf<Pair<Int, Int>>()
         cells.add(startCell)
@@ -257,9 +305,7 @@ class MainViewModel : ViewModel() {
             val cell = CampusGrid.latLonToCell(poi.lat, poi.lon)
             val walkable =
                 if (cell != null) CampusGrid.nearestWalkable(cell.first, cell.second) else null
-
-            if (walkable != null)
-                cells.add(walkable)
+            if (walkable != null) cells.add(walkable)
         }
 
         val n = cells.size
@@ -271,8 +317,7 @@ class MainViewModel : ViewModel() {
         for (i in 0 until n) {
             for (j in i + 1 until n) {
                 val astarResult = AStar.findPathOnly(
-                    cells[i].first, cells[i].second,
-                    cells[j].first, cells[j].second
+                    cells[i].first, cells[i].second, cells[j].first, cells[j].second
                 )
                 val length = astarResult?.length ?: (Double.MAX_VALUE / 2)
                 val path = astarResult?.path ?: emptyList()
@@ -282,6 +327,7 @@ class MainViewModel : ViewModel() {
                 paths[j][i] = path.reversed()
             }
         }
+
         val tourOrder = AntColony.solve(distMatrix)
         val segments = mutableListOf<List<Pair<Int, Int>>>()
         for (k in 0 until tourOrder.size - 1) {
@@ -290,10 +336,8 @@ class MainViewModel : ViewModel() {
             segments.add(paths[from][to] ?: emptyList())
         }
         val orderedCells = tourOrder.dropLast(1).map { cells[it] }
-
         return Triple(segments, orderedCells, cells.size)
     }
-
 
     fun runAntColony(selectedIndices: Set<Int>, context: Context) {
         val map = mapRef ?: return
@@ -310,16 +354,12 @@ class MainViewModel : ViewModel() {
             val result = withContext(Dispatchers.Default) {
                 buildAntColonyRoute(start, selectedPois)
             }
-
             if (result == null) {
                 Toast.makeText(context, "Не удалось построить маршрут", Toast.LENGTH_SHORT).show()
                 return@launch
             }
-
             val (segments, orderedCells) = result
             MapRouteForAnt.drawAntRoute(context, map, segments, orderedCells)
         }
     }
-
-
 }

@@ -1,4 +1,5 @@
 package com.example.tsuappmap.algorithm.Claster
+
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.annotations.MarkerOptions
@@ -83,7 +84,7 @@ object CafeData {
                     .setSnippet("Заведение общепита")
             )
         }
-        Log.d("CafeData","Отображено ${defaultCafes.size} кафе")
+        Log.d("CafeData", "Отображено ${defaultCafes.size} кафе")
     }
 
     private val CLUSTERS_COLORS = listOf(
@@ -148,7 +149,7 @@ object CafeData {
         canvas.drawCircle(size / 2f + 2f, size / 2f + 2f, size / 2f - 4f, paint)
 
         paint.color = color
-        canvas.drawCircle(size / 2f, size/ 2f, size / 2f - 4f, paint)
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 4f, paint)
 
         paint.color = Color.WHITE
         paint.style = Paint.Style.STROKE
