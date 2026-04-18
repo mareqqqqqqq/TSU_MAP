@@ -87,13 +87,13 @@ object RoutePrecomputer {
             val (ri, ci) = nodes[i]
             for (j in i + 1 until n) {
                 val (rj, cj) = nodes[j]
-                val p = AStar.findPath(ri, ci, rj, cj)
-                val d = if (p != null) AStar.pathDistanceMeters(p) else UNREACHABLE
+                val p = AStar.findPathOnly(ri, ci, rj, cj)
+                val d = if (p != null) AStar.pathDistanceMeters(p.path) else UNREACHABLE
 
                 distances[i][j] = d
                 distances[j][i] = d
-                paths[i][j] = p
-                paths[j][i] = p?.reversed()
+                paths[i][j] = p?.path
+                paths[j][i] = p?.path?.reversed()
 
                 pairsDone++
                 onProgress?.invoke(pairsDone, pairsTotal)

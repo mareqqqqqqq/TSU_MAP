@@ -145,63 +145,52 @@ object AStar {
         return path
     }
 
-    fun findPath(
+
+    data class PathResult(
+        val path: List<Pair<Int, Int>>,
+        val length: Double
+    )
+
+    fun findPathOnly(
         startRow: Int, startCol: Int,
         endRow: Int, endCol: Int
-    ): List<Pair<Int, Int>>? {
-        if (startRow == endRow && startCol == endCol) return listOf(Pair(startRow, startCol))
-
+    ): PathResult? {
         val openSet = PriorityQueue<Node>(compareBy { it.f })
-        val gScore = HashMap<Long, Double>()
-        val cameFrom = HashMap<Long, Long>()
 
-        fun key(r: Int, c: Int): Long = r.toLong() * CampusGrid.cols + c
+        val gScore = Array(CampusGrid.rows) {
+            DoubleArray(CampusGrid.cols) { Double.MAX_VALUE }
+        }
 
-        val startKey = key(startRow, startCol)
-        gScore[startKey] = 0.0
+        val cameFrom = Array(CampusGrid.rows) {
+            arrayOfNulls<Pair<Int, Int>>(CampusGrid.cols)
+        }
+
+        gScore[startRow][startCol] = 0.0
         openSet.add(Node(startRow, startCol, 0.0, heuristic(startRow, startCol, endRow, endCol)))
-
-        val closedSet = HashSet<Long>()
 
         while (openSet.isNotEmpty()) {
             val current = openSet.poll()!!
-            val currentKey = key(current.row, current.col)
+
+            if (current.g > gScore[current.row][current.col]) continue
 
             if (current.row == endRow && current.col == endCol) {
-                val path = mutableListOf<Pair<Int, Int>>()
-                var k: Long? = currentKey
-                while (k != null) {
-                    val r = (k / CampusGrid.cols).toInt()
-                    val c = (k % CampusGrid.cols).toInt()
-                    path.add(Pair(r, c))
-                    k = cameFrom[k]
-                }
-                path.reverse()
-                return path
+                val path = reconstructPath(cameFrom, endRow, endCol)
+                return PathResult(path, gScore[endRow][endCol])
             }
 
-            if (!closedSet.add(currentKey)) continue
-            if (current.g > (gScore[currentKey] ?: Double.MAX_VALUE)) continue
-
             for ((nRow, nCol) in getNeighbours(current.row, current.col)) {
-                val nKey = key(nRow, nCol)
-                if (nKey in closedSet) continue
                 val stepCost = if (nRow != current.row && nCol != current.col) 1.414 else 1.0
-                val newG = current.g + stepCost
-                if (newG < (gScore[nKey] ?: Double.MAX_VALUE)) {
-                    gScore[nKey] = newG
-                    cameFrom[nKey] = currentKey
-                    openSet.add(
-                        Node(
-                            nRow,
-                            nCol,
-                            newG,
-                            newG + heuristic(nRow, nCol, endRow, endCol)
-                        )
-                    )
+                val newG = gScore[current.row][current.col] + stepCost
+
+                if (newG < gScore[nRow][nCol]) {
+                    gScore[nRow][nCol] = newG
+                    cameFrom[nRow][nCol] = Pair(current.row, current.col)
+                    val h = heuristic(nRow, nCol, endRow, endCol)
+                    openSet.add(Node(nRow, nCol, newG, newG + h))
                 }
             }
         }
+
         return null
     }
 
@@ -218,4 +207,5 @@ object AStar {
     fun pathDistanceMeters(path: List<Pair<Int, Int>>): Double {
         return pathDistance(path) * CampusGrid.cellSize
     }
+
 }

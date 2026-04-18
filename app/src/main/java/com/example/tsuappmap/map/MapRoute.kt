@@ -1,11 +1,18 @@
 package com.example.tsuappmap.map
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import com.example.tsuappmap.algorithm.Astar.CustomObstacle
 import com.example.tsuappmap.algorithm.Genetic.Route
 import com.example.tsuappmap.algorithm.Genetic.makeNumberedIcon
 import org.maplibre.android.annotations.Marker
 import org.maplibre.android.annotations.MarkerOptions
+import com.example.tsuappmap.algorithm.Claster.ClusterResult
+import org.maplibre.android.annotations.Icon
+import org.maplibre.android.annotations.IconFactory
 import org.maplibre.android.annotations.Polygon
 import org.maplibre.android.annotations.PolygonOptions
 import org.maplibre.android.annotations.Polyline
@@ -26,6 +33,11 @@ object MapRoute {
 
     private const val MAX_VISITED_PER_FRAME = 300
     private const val MAX_FRONTIER_PER_FRAME = 150
+    private var clusterMarkers = mutableListOf<Marker>()
+
+    private var attractionRoute: Polyline? = null
+
+    private var attractionMarkers = mutableListOf<Marker>()
 
     fun drawRoute(map: MapLibreMap, path: List<Pair<Int, Int>>) {
         clearRoute(map)
@@ -88,6 +100,7 @@ object MapRoute {
         visitedPolygons.forEach { map.removePolygon(it) }
         visitedPolygons.clear()
         drawnVisited.clear()
+        drawnFrontiers.clear()
         drawnFrontiers.values.forEach { map.removePolygon(it) }
         drawnFrontiers.clear()
     }
@@ -194,5 +207,55 @@ object MapRoute {
         return map.addPolygon(
             PolygonOptions().addAll(corners).fillColor(color).strokeColor(Color.TRANSPARENT)
         )
+    }
+
+    private fun createColoredCircle(context: Context, color: Int): Icon {
+        val size = 64
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        paint.color = color
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 4f, paint)
+        paint.color = Color.WHITE
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 3f
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 4f, paint)
+        return IconFactory.getInstance(context).fromBitmap(bitmap)
+    }
+
+    private val clusterColors = listOf(
+        Color.argb(220, 255, 80, 80),
+        Color.argb(220, 80, 160, 255),
+        Color.argb(220, 80, 220, 100),
+        Color.argb(220, 255, 200, 0),
+        Color.argb(220, 220, 80, 255)
+    )
+
+
+    fun clearClusters(map: MapLibreMap) {
+        clusterMarkers.forEach { map.removeMarker(it) }
+        clusterMarkers.clear()
+    }
+
+    fun drawClusters(map: MapLibreMap, results: List<ClusterResult>, context: Context) {
+        clearClusters(map)
+        for (result in results) {
+            val color = clusterColors[result.clusterId % clusterColors.size]
+            val icon = createColoredCircle(context, color)
+
+            clusterMarkers.add(
+                map.addMarker(
+                    MarkerOptions().position(result.cafe.location).title(result.cafe.name)
+                        .setSnippet("Кластер ${result.clusterId + 1}").icon(icon)
+                )
+            )
+        }
+    }
+
+    fun clearAttractionRoute(map: MapLibreMap) {
+        attractionRoute?.let { map.removePolyline(it) }
+        attractionRoute = null
+        attractionMarkers.forEach { map.removeMarker(it) }
+        attractionMarkers.clear()
     }
 }

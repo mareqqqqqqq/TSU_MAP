@@ -1,4 +1,5 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Claster
+
 import org.maplibre.android.geometry.LatLng
 
 class KMeansManhattan {
@@ -19,8 +20,8 @@ class KMeansManhattan {
 
         for (centerIndex in 2..k) {
             val distances = cafes.map { cafe ->
-                val minDistance = centers.minOf {
-                    center -> manhattanDistance(cafe.location, center)
+                val minDistance = centers.minOf { center ->
+                    manhattanDistance(cafe.location, center)
                 }
 
                 minDistance * minDistance
@@ -64,18 +65,18 @@ class KMeansManhattan {
         }
     }
 
-    fun recalculateCenters(assignments: List<ClusterResult>,
-                           k: Int, cafes:
-                           List<Cafe>): List<LatLng> {
-        val clusters = assignments.groupBy {it.clusterId }
-        return (0 until k).map  { clusterId ->
+    fun recalculateCenters(
+        assignments: List<ClusterResult>,
+        k: Int, cafes:
+        List<Cafe>
+    ): List<LatLng> {
+        val clusters = assignments.groupBy { it.clusterId }
+        return (0 until k).map { clusterId ->
             val pointsInCluster = clusters[clusterId] ?: emptyList()
 
             if (pointsInCluster.isEmpty()) {
                 cafes.random().location
-            }
-
-            else {
+            } else {
                 val sortedLats = pointsInCluster.map { it.cafe.location.latitude }.sorted()
                 val sortedLngs = pointsInCluster.map { it.cafe.location.longitude }.sorted()
 
@@ -92,14 +93,16 @@ class KMeansManhattan {
             return true
         }
 
-        return previous.zip(current).any {
-            (prev, curr) -> manhattanDistance(prev, curr) > 1.0
+        return previous.zip(current).any { (prev, curr) ->
+            manhattanDistance(prev, curr) > 1.0
         }
     }
 
 
     fun cluster(cafes: List<Cafe>, k: Int): List<ClusterResult> {
-        if (cafes.isEmpty() || k <= 0 ) { return emptyList() }
+        if (cafes.isEmpty() || k <= 0) {
+            return emptyList()
+        }
 
         if (k >= cafes.size) {
             return cafes.mapIndexed { index, cafe ->

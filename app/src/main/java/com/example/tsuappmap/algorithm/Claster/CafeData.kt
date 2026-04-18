@@ -1,20 +1,21 @@
-package com.example.tsuappmap
+package com.example.tsuappmap.algorithm.Claster
+
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.annotations.MarkerOptions
 import android.graphics.Color
-import org.maplibre.android.annotations.PolygonOptions
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.util.Log
+import org.maplibre.android.annotations.Icon
 import org.maplibre.android.annotations.IconFactory
 
 
 data class Cafe(
     val name: String,
-    val location: LatLng,
-    val isUserAdded: Boolean = false
+    val location: LatLng
 )
 
 
@@ -61,15 +62,15 @@ object CafeData {
                     .setSnippet("Заведение общепита")
             )
         }
-        android.util.Log.d("CafeData","Отображено ${defaultCafes.size} кафе")
+        Log.d("CafeData", "Отображено ${defaultCafes.size} кафе")
     }
 
     private val CLUSTERS_COLORS = listOf(
         Color.argb(220, 255, 80, 80),
-        Color.argb(220, 80,  160, 255),
-        Color.argb(220, 80,  220, 100),
+        Color.argb(220, 80, 160, 255),
+        Color.argb(220, 80, 220, 100),
         Color.argb(220, 255, 200, 0),
-        Color.argb(220, 220, 80,  255)
+        Color.argb(220, 220, 80, 255)
     )
 
     fun showClusterOnMap(map: MapLibreMap, k: Int = 3, context: Context) {
@@ -89,7 +90,6 @@ object CafeData {
             )
         }
     }
-    //dfdfdfdf
 
     fun showClustersManhattanOnMap(map: MapLibreMap, k: Int = 3, context: Context) {
         val results = KMeansManhattan().cluster(defaultCafes, k)
@@ -106,7 +106,7 @@ object CafeData {
         }
     }
 
-    private fun createColoredIcon(context: Context, color: Int): org.maplibre.android.annotations.Icon {
+    private fun createColoredIcon(context: Context, color: Int): Icon {
         val size = 64
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -116,7 +116,7 @@ object CafeData {
         canvas.drawCircle(size / 2f + 2f, size / 2f + 2f, size / 2f - 4f, paint)
 
         paint.color = color
-        canvas.drawCircle(size / 2f, size/ 2f, size / 2f - 4f, paint)
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f - 4f, paint)
 
         paint.color = Color.WHITE
         paint.style = Paint.Style.STROKE
