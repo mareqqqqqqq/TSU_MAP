@@ -15,8 +15,7 @@ import org.maplibre.android.annotations.PolylineOptions
 
 @Composable
 fun CampusMapView(
-    onMapReady: (MapLibreMap) -> Unit,
-    modifier: Modifier = Modifier
+    onMapReady: (MapLibreMap) -> Unit, modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val mapView = remember { MapView(context) }
@@ -43,10 +42,8 @@ fun CampusMapView(
                         val lngMax =
                             centerTsu.longitude + ((baseRadius + eastExtra) / (111320.0 * cosLat))
 
-                        val tsuBounds = LatLngBounds.Builder()
-                            .include(LatLng(latMin, lngMin))
-                            .include(LatLng(latMax, lngMax))
-                            .build()
+                        val tsuBounds = LatLngBounds.Builder().include(LatLng(latMin, lngMin))
+                            .include(LatLng(latMax, lngMax)).build()
 
                         map.setLatLngBoundsForCameraTarget(tsuBounds)
                         map.setMinZoomPreference(13.5)
@@ -54,10 +51,8 @@ fun CampusMapView(
                         map.uiSettings.isLogoEnabled = false
                         map.uiSettings.isAttributionEnabled = false
 
-                        map.cameraPosition = CameraPosition.Builder()
-                            .target(centerTsu)
-                            .zoom(16.0)
-                            .build()
+                        map.cameraPosition =
+                            CameraPosition.Builder().target(centerTsu).zoom(16.0).build()
 
                         drawFinalGrid(map, latMin, latMax, lngMin, lngMax, centerTsu.latitude)
 
@@ -65,8 +60,7 @@ fun CampusMapView(
                     }
                 }
             }
-        },
-        modifier = modifier
+        }, modifier = modifier
     )
 }
 
@@ -92,10 +86,8 @@ fun drawFinalGrid(
     var currentLat = startLat
     while (currentLat <= latMax) {
         map.addPolyline(
-            PolylineOptions()
-                .add(LatLng(currentLat, lngMin), LatLng(currentLat, lngMax))
-                .color(lineColor)
-                .width(lineWidth)
+            PolylineOptions().add(LatLng(currentLat, lngMin), LatLng(currentLat, lngMax))
+                .color(lineColor).width(lineWidth)
         )
         currentLat += latStep
     }
@@ -103,10 +95,8 @@ fun drawFinalGrid(
     var currentLng = startLng + lngStep
     while (currentLng <= lngMax) {
         map.addPolyline(
-            PolylineOptions()
-                .add(LatLng(latMin, currentLng), LatLng(latMax, currentLng))
-                .color(lineColor)
-                .width(lineWidth)
+            PolylineOptions().add(LatLng(latMin, currentLng), LatLng(latMax, currentLng))
+                .color(lineColor).width(lineWidth)
         )
         currentLng += lngStep
     }

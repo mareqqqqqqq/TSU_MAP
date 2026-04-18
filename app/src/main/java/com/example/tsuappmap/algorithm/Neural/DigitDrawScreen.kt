@@ -69,8 +69,7 @@ fun DigitDrawContent() {
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .background(Color(red = 0, green = 114, blue = 188))
-                .pointerInput(Unit)
-                {
+                .pointerInput(Unit) {
                     detectTapGestures { offset ->
                         val cellW = size.width.toFloat() / gridSize
                         val cellH = size.height.toFloat() / gridSize
@@ -111,8 +110,7 @@ fun DigitDrawContent() {
                         }
                         if (changed) redrawTrigger++
                     }
-                }
-        ) {
+                }) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 redrawTrigger.let { _ ->
                     val cellW = size.width / gridSize
@@ -154,8 +152,7 @@ fun DigitDrawContent() {
         }
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
                 onClick = {

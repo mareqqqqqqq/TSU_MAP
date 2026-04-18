@@ -82,9 +82,7 @@ object MapRouteForAnt {
             val (lat, lon) = CampusGrid.cellToLatLon(cell.first, cell.second)
             val label = if (index == 0) "Старт" else "$index"
             val bgColor = if (index == 0) Color.rgb(
-                0,
-                160,
-                80
+                0, 160, 80
             ) else segmentColors[(index - 1)]
             val icon = makeNumberedIcon(context, label, bgColor)
             val marker = map.addMarker(

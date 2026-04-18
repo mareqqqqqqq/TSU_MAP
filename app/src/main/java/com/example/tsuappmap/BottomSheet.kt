@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,12 +68,14 @@ fun TabContent(
     antStartSet: Boolean,
     onClearMap: () -> Unit,
     clearCounter: Int = 0,
-    onShowManhattan: () -> Unit,
-    onShowEuclidian: () -> Unit,
+    onShowManhattan: (Int) -> Unit,
+    onShowEuclidian: (Int) -> Unit,
+    onShowAstar: (Int) -> Unit,
+    isAstarClustering: Boolean = false,
+    astarProgress: Float = 0f,
     onOpenDigitScreen: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -88,7 +91,7 @@ fun TabContent(
                     Button(
                         onClick = onPlaceStart,
                         modifier = Modifier
-                            .width(360.dp)
+                            .fillMaxWidth()
                             .height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -100,7 +103,7 @@ fun TabContent(
                     Button(
                         onClick = onPlaceEnd,
                         modifier = Modifier
-                            .width(360.dp)
+                            .fillMaxWidth()
                             .height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -112,7 +115,7 @@ fun TabContent(
                     Button(
                         onClick = onToggleObstacle,
                         modifier = Modifier
-                            .width(360.dp)
+                            .fillMaxWidth()
                             .height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -124,7 +127,7 @@ fun TabContent(
                     Button(
                         onClick = onMyLocationStart,
                         modifier = Modifier
-                            .width(360.dp)
+                            .fillMaxWidth()
                             .height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -136,7 +139,7 @@ fun TabContent(
                     Button(
                         onClick = onMyLocationEnd,
                         modifier = Modifier
-                            .width(360.dp)
+                            .fillMaxWidth()
                             .height(70.dp),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -146,32 +149,103 @@ fun TabContent(
                     ) { Text("Моё местоположение - Конец") }
                 }
 
-                2 -> Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)
-                ) {
-                    Button(
-                        onClick = onShowEuclidian,
-                        modifier = Modifier
-                            .width(360.dp)
-                            .height(65.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(red = 186, green = 184, blue = 97),
-                            contentColor = Color.White
-                        )
-                    ) { Text("K-means (Евклидово расстояние)") }
+                2 -> {
+                    var clusterCount by remember { mutableStateOf(3) }
 
-                    Button(
-                        onClick = onShowManhattan,
-                        modifier = Modifier
-                            .width(360.dp)
-                            .height(65.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(red = 186, green = 97, blue = 97),
-                            contentColor = Color.White
-                        )
-                    ) { Text("K-means (Манхэттенское расстояние)") }
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { onShowEuclidian(clusterCount) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF003F8A),
+                                contentColor = Color.White
+                            )
+                        ) { Text("K-means (Евклид)") }
+
+                        Button(
+                            onClick = { onShowManhattan(clusterCount) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF005E8A),
+                                contentColor = Color.White
+                            )
+                        ) { Text("K-means (Манхэттен)") }
+
+                        Button(
+                            onClick = { if (!isAstarClustering) onShowAstar(clusterCount) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isAstarClustering) Color(0xFF444444) else Color(
+                                    0xFF006B55
+                                ),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            if (isAstarClustering) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CircularProgressIndicator(
+                                        progress = { astarProgress },
+                                        modifier = Modifier.size(18.dp),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                    Text("Считается... ${(astarProgress * 100).toInt()}%")
+                                }
+                            } else {
+                                Text("K-means (Пешеходный A*)")
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF1A1A2E), shape = RoundedCornerShape(10.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                "Кластеров:",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(Modifier.weight(1f))
+                            (2..6).forEach { n ->
+                                val isSelected = clusterCount == n
+                                Button(
+                                    onClick = { clusterCount = n },
+                                    modifier = Modifier.size(36.dp),
+                                    contentPadding = PaddingValues(0.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (isSelected) Color(0xFF0078D4) else Color(
+                                            0xFF3A3A4A
+                                        )
+                                    )
+                                ) {
+                                    Text(
+                                        "$n",
+                                        fontSize = 13.sp,
+                                        color = Color.White,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
 
                 3 -> FoodRouteContent(
@@ -276,12 +350,6 @@ fun TabContent(
                         .fillMaxSize()
                         .background(Color(red = 100, green = 100, blue = 100))
                 ) { Text("Контент кнопки 5") }
-
-                6 -> Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(red = 100, green = 100, blue = 100))
-                ) { Text("Контент кнопки 6") }
             }
         }
 
